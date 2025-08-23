@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Room Viewer</title>
+<style>html,body{margin:0;height:100%;background:#0b0d10;color:#e8eaed;font-family:system-ui}#app{position:fixed;inset:0;display:flex}#view{flex:1}#ui{width:320px;background:#11141a;border-left:1px solid #232832;padding:12px;overflow:auto}.row{display:flex;gap:8px;align-items:center;margin:8px 0}.small{font-size:12px;opacity:.85}</style>
+</head><body>
+<div id="app"><div id="view"></div><div id="ui">
+<h1>Viewer</h1><div class="small">Pick a .glb or use sample.</div>
+<div class="row"><input type="file" id="file" accept=".glb,.gltf"/><button id="loadSample">Load Sample</button></div>
+<div class="row"><label><input type="checkbox" id="gridT" checked> Grid</label><label><input type="checkbox" id="axesT" checked> Axes</label></div>
+<div id="stats" class="small"></div>
+</div></div>
+<script src="https://unpkg.com/three@0.155.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.155.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three@0.155.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="../src/viewer.js"></script>
+</body></html>

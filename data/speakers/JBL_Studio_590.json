@@ -1,0 +1,10 @@
+{
+  "brand": "JBL",
+  "model": "Studio 590",
+  "type": "tower",
+  "sensitivity_db_2v83_1m": 91,
+  "impedance_ohm_nominal": 6,
+  "max_spl_db_pair": 112,
+  "data_quality": { "tier": "C", "confidence_0_1": 0.55 },
+  "spinorama": null
+}

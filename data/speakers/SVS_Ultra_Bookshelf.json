@@ -1,0 +1,10 @@
+{
+  "brand": "SVS",
+  "model": "Ultra Bookshelf",
+  "type": "bookshelf",
+  "sensitivity_db_2v83_1m": 87,
+  "impedance_ohm_nominal": 8,
+  "max_spl_db_pair": 108,
+  "data_quality": { "tier": "B", "confidence_0_1": 0.65 },
+  "spinorama": null
+}

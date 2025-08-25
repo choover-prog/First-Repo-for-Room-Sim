@@ -1,0 +1,10 @@
+{
+  "brand": "Elac",
+  "model": "Debut 2.0 B6.2",
+  "type": "bookshelf",
+  "sensitivity_db_2v83_1m": 87,
+  "impedance_ohm_nominal": 6,
+  "max_spl_db_pair": 106,
+  "data_quality": { "tier": "C", "confidence_0_1": 0.5 },
+  "spinorama": null
+}

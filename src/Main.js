@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { ensureOnboarding } from './ui/Onboarding.js';
+import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 
 const mToFt = 3.28084;
 
@@ -15,6 +17,9 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+
+ensureOnboarding();
+mountEquipmentPanel(document);
 
 // Renderer / Scene / Camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });

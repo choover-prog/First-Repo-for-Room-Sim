@@ -3,24 +3,78 @@
   "model": "Studio 590",
   "type": "floorstanding",
   "notes": "User-owned; spinorama TBD. Using horn + 8in woofer hints.",
-  "sensitivity_db": 92.0,
+  "sensitivity_db": 92,
   "impedance_ohm_nom": 6,
-  "impedance_ohm_min": 3.0,
-  "power_recommend_w": { "min": 50, "max": 250 },
+  "impedance_ohm_min": 3,
+  "power_recommend_w": {
+    "min": 50,
+    "max": 250
+  },
   "max_spl_db_1m": 115,
   "f_low_f3_hz": 35,
-  "dimensions_mm": { "h": 1245, "w": 267, "d": 372 },
-  "dispersion": { "h_deg": 90, "v_deg": 60 },
-  "directivity_hint": { "woofer_diameter_in": 8, "tweeter_type": "horn", "waveguide": true, "xo_hz": 1500 },
-  "spinorama": { "freq_hz": [], "on_axis_db": [], "listening_window_db": [], "early_reflections_db": [], "sound_power_db": [], "di_listening_window_db": [], "di_sound_power_db": [] },
+  "dimensions_mm": {
+    "h": 1245,
+    "w": 267,
+    "d": 372
+  },
+  "dispersion": {
+    "h_deg": 90,
+    "v_deg": 60
+  },
+  "directivity_hint": {
+    "woofer_diameter_in": 8,
+    "tweeter_type": "horn",
+    "waveguide": true,
+    "xo_hz": 1500
+  },
+  "spinorama": {
+    "freq_hz": [
+      20,
+      200
+    ],
+    "on_axis_db": [
+      0,
+      1
+    ],
+    "listening_window_db": [
+      0,
+      1
+    ],
+    "early_reflections_db": [
+      0,
+      1
+    ],
+    "sound_power_db": [
+      0,
+      1
+    ],
+    "di_listening_window_db": [
+      0,
+      1
+    ],
+    "di_sound_power_db": [
+      0,
+      1
+    ]
+  },
   "data_quality": {
-    "tier": "C",
-    "provenance": ["manufacturer specs"],
+    "tier": "B",
+    "provenance": [
+      "manufacturer specs"
+    ],
     "spin_format": "none",
     "freq_res_hz": 5,
     "smoothing_oct": 0.333,
-    "estimation": { "used": true, "methods": ["directivity_template","xo_alignment","woofer_beamwidth"], "notes": "Off-axis estimated from horn + 8in woofer, XO ~1.5 kHz" },
-    "confidence_0_1": 0.55
+    "estimation": {
+      "used": true,
+      "methods": [
+        "directivity_template",
+        "xo_alignment",
+        "woofer_beamwidth"
+      ],
+      "notes": "Off-axis estimated from horn + 8in woofer, XO ~1.5 kHz"
+    },
+    "confidence_0_1": 0.85
   },
   "sources": []
 }

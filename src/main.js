@@ -4,6 +4,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
+import { captureCanvasPNG, downloadBlobURL, downloadJSON } from './lib/report.js';
 
 const mToFt = 3.28084;
 
@@ -12,12 +14,18 @@ const container   = document.getElementById('view');
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
+const lfToggle    = document.getElementById('lfHeatmapT');
+const roomLEl     = document.getElementById('roomL');
+const roomWEl     = document.getElementById('roomW');
+const roomHEl     = document.getElementById('roomH');
 const fileInput   = document.getElementById('file');
 const loadSample  = document.getElementById('loadSample');
 const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+const exportPNGBtn = document.getElementById('btnExportPNG');
+const exportJSONBtn = document.getElementById('btnExportJSON');
 (function addSettingsStrip(){
   const ui = document.getElementById('ui');
   if (!ui || document.getElementById('settingsStrip')) return;
@@ -83,6 +91,10 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
+const lfHeatmap = new LFHeatmapLayer(scene);
+lfHeatmap.setRoomDims({ L: parseFloat(roomLEl.value), W: parseFloat(roomWEl.value), H: parseFloat(roomHEl.value) });
+lfHeatmap.setEnabled(lfToggle.checked);
+
 // Pickable meshes (for measuring)
 let pickables = [];
 
@@ -93,6 +105,14 @@ let root = null;
 // ---------- Utility UI ----------
 gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
+lfToggle.onchange = e => {
+  lfHeatmap.setEnabled(e.target.checked);
+  if (e.target.checked) lfHeatmap.update();
+};
+[roomLEl, roomWEl, roomHEl].forEach(inp => inp.addEventListener('input', () => {
+  lfHeatmap.setRoomDims({ L: parseFloat(roomLEl.value), W: parseFloat(roomWEl.value), H: parseFloat(roomHEl.value) });
+  if (lfToggle.checked) lfHeatmap.update();
+}));
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {
@@ -211,6 +231,24 @@ container.addEventListener('drop', e => {
   e.preventDefault();
   const f = e.dataTransfer.files?.[0];
   if (f) f.arrayBuffer().then(loadArrayBuffer);
+});
+
+exportPNGBtn.addEventListener('click', async () => {
+  const url = await captureCanvasPNG(renderer.domElement);
+  downloadBlobURL(url, 'view.png');
+});
+
+exportJSONBtn.addEventListener('click', () => {
+  const spSel = document.getElementById('spSel');
+  const ampSel = document.getElementById('ampSel');
+  const state = {
+    persona: getPersona(),
+    tooltips: isTooltipsEnabled(),
+    room: { L: parseFloat(roomLEl.value), W: parseFloat(roomWEl.value), H: parseFloat(roomHEl.value) },
+    speaker: spSel ? spSel.value || null : null,
+    amp: ampSel ? ampSel.value || null : null
+  };
+  downloadJSON(state, 'state.json');
 });
 
 // ---------- Measure Mode ----------

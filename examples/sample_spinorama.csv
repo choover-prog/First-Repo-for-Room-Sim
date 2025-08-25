@@ -1,0 +1,3 @@
+freq_hz,on_axis_db,listening_window_db,early_reflections_db,sound_power_db,di_listening_window_db,di_sound_power_db
+20,0,0,0,0,0,0
+200,1,1,1,1,1,1

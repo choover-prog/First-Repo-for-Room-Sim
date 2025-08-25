@@ -2,6 +2,7 @@ import { requiredWattsToHitSPL, headroomDb } from '../lib/spl.js';
 import { simplePreferenceScore } from '../lib/preference.js';
 import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js';
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
+import { badge } from '../ui/Badges.js';
 
 async function loadJSON(url) {
   const r = await fetch(url);
@@ -28,7 +29,7 @@ export function mountEquipmentPanel(container) {
   const personaCfg = getPersonaConfig();
   const root = el(`
     <div style="margin-top:12px">
-      <h2 style="font-size:16px;margin:8px 0">Equipment</h2>
+      <h2 style="font-size:16px;margin:8px 0">Equipment <span id="personaBadge"></span></h2>
       <div class="row" ${tipAttr('selectEq','Pick a speaker and amp to evaluate headroom')} >
         <select id="spSel"></select>
         <select id="ampSel"></select>
@@ -55,15 +56,19 @@ export function mountEquipmentPanel(container) {
   const tierEl = root.querySelector('#eqpTier');
   const stats  = root.querySelector('#eqpStats');
   const warn   = root.querySelector('#eqpWarn');
+  const personaBadge = root.querySelector('#personaBadge');
+  personaBadge.appendChild(badge(personaCfg.label.toUpperCase(), '#2a6bf2', 'Persona'));
 
   let spData = null, ampData = null, manifest = null;
 
   function renderTier(q) {
-    if (!q) { tierEl.textContent = ''; return; }
+    tierEl.textContent = '';
+    if (!q) return;
     const { label, color } = tierBadge(q.tier);
     const confPct = Math.round(confidenceFromQuality(q) * 100);
-    tierEl.innerHTML = `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:${color};color:#0b0d10;font-weight:600">${label} • ${confPct}% confidence
-    </span>`;
+    tierEl.appendChild(badge(label, color, 'Data tier'));
+    tierEl.append(' ');
+    tierEl.appendChild(badge(`${confPct}%`, '#3d4a63', 'Confidence'));
   }
 
   function renderStats() {

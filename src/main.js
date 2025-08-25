@@ -3,6 +3,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
+import { mountChatPanel } from './ui/ChatPanel.js';
+import { mountCalibrationPanel } from './panels/CalibrationPanel.js';
+import { mountCartPanel } from './panels/CartPanel.js';
+import { getLedger } from './lib/ledger.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 
 const mToFt = 3.28084;
@@ -45,6 +49,28 @@ const labelEl     = document.getElementById('measureLabel');
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
+const cartItems = [
+  { name: 'Direct Speaker', price: 499, auto_eq: true },
+  { name: 'Affiliate Sub', price: 299, affiliate: true }
+];
+mountCartPanel(document.getElementById('ui'), cartItems);
+const chat = mountChatPanel();
+document.getElementById('chatBtn').onclick = () => chat.open();
+let calMounted = false;
+document.getElementById('calBtn').onclick = () => {
+  if (!calMounted) {
+    mountCalibrationPanel(document.getElementById('ui'));
+    calMounted = true;
+  }
+};
+document.getElementById('ledgerExport').onclick = () => {
+  const data = JSON.stringify(getLedger(), null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ledger.json';
+  a.click();
+};
 
 
 // Renderer / Scene / Camera

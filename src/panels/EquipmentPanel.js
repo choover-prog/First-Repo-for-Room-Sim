@@ -66,7 +66,7 @@ export function mountEquipmentPanel(container) {
     </span>`;
   }
 
-  function renderStats() {
+function renderStats() {
     if (!spData || !ampData) { stats.textContent = ''; warn.textContent=''; return; }
     const distance = parseFloat(distEl.value || '3');
     const target   = parseFloat(tgtEl.value || '105');
@@ -84,7 +84,11 @@ export function mountEquipmentPanel(container) {
     const conf = confidenceFromQuality(q);
     const shownPref = blendScore(rawPref, conf);
 
+    const badges = [];
+    if (spData.auto_eq_preset) badges.push('<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:#2b3a53;font-size:11px;margin-right:4px">Auto-EQ Ready</span>');
+    if (spData.affiliate) badges.push('<span style="display:inline-block;padding:2px 6px;border-radius:4px;background:#2b3a53;font-size:11px;margin-right:4px">Affiliate Revenue</span>');
     stats.innerHTML = `
+      ${badges.join('')}
       Speaker: <b>${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
       Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
       Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>

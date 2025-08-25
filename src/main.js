@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { mountCartPanel } from './ui/CartPanel.js';
 
 const mToFt = 3.28084;
 
@@ -18,6 +19,7 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+let cart;
 (function addSettingsStrip(){
   const ui = document.getElementById('ui');
   if (!ui || document.getElementById('settingsStrip')) return;
@@ -35,16 +37,19 @@ const labelEl     = document.getElementById('measureLabel');
         <input id="tipsChk" type="checkbox" ${isTooltipsEnabled()?'checked':''}/>
       </label>
       <button id="resetOnb" title="Show first-time persona tutorial again">Run Tutorial</button>
+      <button id="cartBtn">Cart</button>
     </div>
   `;
   ui.prepend(div);
   div.querySelector('#personaSel').onchange = (e)=> setPersona(e.target.value);
   div.querySelector('#tipsChk').onchange = (e)=> setTooltipsEnabled(e.target.checked);
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
+  div.querySelector('#cartBtn').onclick = ()=> cart && cart.toggle();
 })();
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
+cart = mountCartPanel();
 
 
 // Renderer / Scene / Camera

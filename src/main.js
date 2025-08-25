@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
+import { mountChatPanel } from './ui/ChatPanel.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 
 const mToFt = 3.28084;
@@ -45,6 +46,46 @@ const labelEl     = document.getElementById('measureLabel');
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
+
+const appliedState = { delays: {}, peq: null, xo: null };
+const undoStack = [];
+
+function onApplyAction(action) {
+  switch (action.type) {
+    case 'set-delay': {
+      undoStack.push({ type: 'set-delay', subId: action.subId, ms: appliedState.delays[action.subId] });
+      appliedState.delays[action.subId] = action.ms;
+      localStorage.setItem(`subDelay:${action.subId}`, action.ms);
+      alert(`Applied delay ${action.ms} ms to ${action.subId} (remember to program AVR/MiniDSP)`);
+      break;
+    }
+    case 'apply-peq': {
+      undoStack.push({ type: 'apply-peq', filters: appliedState.peq });
+      appliedState.peq = action.filters;
+      console.table(action.filters);
+      alert('PEQ applied (see console for table).');
+      break;
+    }
+    case 'set-xo': {
+      undoStack.push({ type: 'set-xo', hz: appliedState.xo });
+      appliedState.xo = action.hz;
+      localStorage.setItem('xo', action.hz);
+      alert(`Crossover set to ${action.hz} Hz`);
+      break;
+    }
+    case 'undo': {
+      const last = undoStack.pop();
+      if (last) onApplyAction(last);
+      break;
+    }
+  }
+}
+
+const chatPanel = mountChatPanel({
+  rootEl: document.body,
+  onApplyAction
+});
+document.getElementById('btnChat').onclick = () => chatPanel.toggle();
 
 
 // Renderer / Scene / Camera

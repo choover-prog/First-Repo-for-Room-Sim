@@ -2,6 +2,8 @@ import { requiredWattsToHitSPL, headroomDb } from '../lib/spl.js';
 import { simplePreferenceScore } from '../lib/preference.js';
 import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js';
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
+import { withLivePrice } from '../lib/catalog.js';
+import { flags } from '../config/flags.js';
 
 async function loadJSON(url) {
   const r = await fetch(url);
@@ -71,7 +73,9 @@ export function mountEquipmentPanel(container) {
     const distance = parseFloat(distEl.value || '3');
     const target   = parseFloat(tgtEl.value || '105');
     const wattsReq = requiredWattsToHitSPL(target, spData.sensitivity_db, distance, 1);
-    const head     = headroomDb(ampData.power_w_8ohm_all || 50, wattsReq);
+      const head     = headroomDb(ampData.power_w_8ohm_all || 50, wattsReq);
+      const spPrice  = spData.price ? `$${spData.price}` : 'n/a';
+      const ampPrice = ampData.price ? `$${ampData.price}` : 'n/a';
 
     const q = spData.data_quality || { tier: 'D' };
     renderTier(q);
@@ -86,11 +90,13 @@ export function mountEquipmentPanel(container) {
 
     stats.innerHTML = `
       Speaker: <b>${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
-      Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
-      Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
-      Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>
-      Headroom (8Ω rated): <b>${head.toFixed(1)} dB</b>
-    `;
+        Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
+        Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
+        Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>
+        Headroom (8Ω rated): <b>${head.toFixed(1)} dB</b><br/>
+        Speaker price: ${spPrice}${flags.pricePoller ? ' (live)' : ''}<br/>
+        Amp price: ${ampPrice}${flags.pricePoller ? ' (live)' : ''}
+      `;
     warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';
   }
 
@@ -100,7 +106,11 @@ export function mountEquipmentPanel(container) {
     Promise.all([
       spFile ? loadJSON(`/data/speakers/${spFile}`) : null,
       ampFile ? loadJSON(`/data/amps/${ampFile}`) : null
-    ]).then(([sp, amp]) => { spData = sp; ampData = amp; renderStats(); });
+      ]).then(async ([sp, amp]) => {
+        spData = sp ? await withLivePrice(sp) : null;
+        ampData = amp ? await withLivePrice(amp) : null;
+        renderStats();
+      });
   }
 
   (async () => {

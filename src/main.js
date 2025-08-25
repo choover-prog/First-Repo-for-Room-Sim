@@ -2,8 +2,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
+import { mountChatPanel } from './panels/ChatPanel.js';
+import { mountCalibrationPanel } from './panels/CalibrationPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { startJobs } from './jobs/runner.js';
 
 const mToFt = 3.28084;
 
@@ -44,7 +47,10 @@ const labelEl     = document.getElementById('measureLabel');
 })();
 
 mountEquipmentPanel(document.getElementById('ui'));
+mountChatPanel(document.getElementById('ui'));
+mountCalibrationPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
+startJobs();
 
 
 // Renderer / Scene / Camera

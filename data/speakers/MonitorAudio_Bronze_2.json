@@ -1,0 +1,14 @@
+{
+  "brand": "MonitorAudio",
+  "model": "Bronze 2",
+  "type": "bookshelf",
+  "sensitivity_db": 90,
+  "impedance_ohm_min": 4,
+  "f_low_f3_hz": 45,
+  "form_factor": "bookshelf",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

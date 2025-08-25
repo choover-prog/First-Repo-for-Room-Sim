@@ -75,6 +75,10 @@ export function mountEquipmentPanel(container) {
 
     const q = spData.data_quality || { tier: 'D' };
     renderTier(q);
+    const hasSpin = q.tier === 'A' && spData.spinorama && spData.spinorama.freq_hz && spData.spinorama.freq_hz.length;
+    if (hasSpin) {
+      tierEl.innerHTML += ' <span style="margin-left:4px;padding:2px 6px;border-radius:999px;background:#3ddc97;color:#0b0d10;font-size:11px">Spinorama Verified</span>';
+    }
 
     const rawPref = simplePreferenceScore({
       onAxisVarDb: 2.0,
@@ -113,12 +117,23 @@ export function mountEquipmentPanel(container) {
     ampSel.innerHTML = `<option value="">Select amp</option>` +
       ampList.map(f => `<option value="${f}">${f.replace('.json','').replace(/_/g,' ')}</option>`).join('');
 
-    spSel.addEventListener('change', onChange);
-    ampSel.addEventListener('change', onChange);
+    spSel.addEventListener('change', () => {
+      localStorage.setItem('app.selected.speaker', spSel.value);
+      onChange();
+    });
+    ampSel.addEventListener('change', () => {
+      localStorage.setItem('app.selected.amp', ampSel.value);
+      onChange();
+    });
     distEl.addEventListener('input', renderStats);
     tgtEl.addEventListener('input', renderStats);
 
-    // Persona defaults can hide advanced panels later; for now this panel is always visible.
+    const savedSp = localStorage.getItem('app.selected.speaker');
+    const savedAmp = localStorage.getItem('app.selected.amp');
+    if (savedSp) spSel.value = savedSp;
+    if (savedAmp) ampSel.value = savedAmp;
+    onChange();
+
     if (personaCfg && personaCfg.tooltips === false) {
       setTooltipsEnabled(false);
     }

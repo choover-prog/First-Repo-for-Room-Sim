@@ -1,0 +1,14 @@
+{
+  "brand": "Yamaha",
+  "model": "RXA6A",
+  "type": "avr",
+  "power_w_8ohm_all": 150,
+  "power_w_4ohm_all": 220,
+  "processing": "YPAO",
+  "channels": 9,
+  "preouts": true,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

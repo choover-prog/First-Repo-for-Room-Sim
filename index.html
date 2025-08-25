@@ -42,6 +42,8 @@
         <div class="row">
           <label><input type="checkbox" id="gridT" checked /> Grid</label>
           <label><input type="checkbox" id="axesT" checked /> Axes</label>
+          <label><input type="checkbox" id="reflectionsT" /> Reflections</label>
+          <label><input type="checkbox" id="micsT" /> Mics</label>
         </div>
 
         <div class="sep"></div>
@@ -55,10 +57,36 @@
           <button id="clearMeasure">Clear</button>
         </div>
 
+        <div class="row">
+          <label>Room Template
+            <select id="roomTemplateSel"></select>
+          </label>
+        </div>
+        <div class="row" style="gap:4px">
+          <label>L <input id="roomL" type="number" step="0.1" value="5" style="width:60px"/></label>
+          <label>W <input id="roomW" type="number" step="0.1" value="4" style="width:60px"/></label>
+          <label>H <input id="roomH" type="number" step="0.1" value="3" style="width:60px"/></label>
+        </div>
+        <div class="row">
+          <select id="micLayoutSel">
+            <option value="">Mic layout…</option>
+            <option value="audyssey">Audyssey</option>
+            <option value="dirac">Dirac</option>
+            <option value="custom">Custom</option>
+          </select>
+          <button id="btnExportMics">Export Mics</button>
+        </div>
+
         <div id="stats" class="muted"></div>
         <div class="tips">
           Tip: drag & drop a GLB anywhere in the left panel.<br/>
           Esc = cancel/clear current measurement.
+        </div>
+        <div class="row">
+          <button id="btnExportPDF">Export PDF</button>
+        </div>
+        <div class="row">
+          <button id="btnGuide">Help / Restart Guide</button>
         </div>
       </div>
     </div>

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "small_living",
+    "label": "Small Living Room 12×15×8 ft",
+    "L": 3.66,
+    "W": 4.57,
+    "H": 2.44,
+    "seats": [ { "x": 1.83, "y": 1.0, "z": 2.29 } ],
+    "speakers": [ { "x": 0.5, "y": 1.0, "z": 0.5 }, { "x": 3.16, "y": 1.0, "z": 0.5 } ]
+  },
+  {
+    "id": "dedicated_theater",
+    "label": "Dedicated Theater 14×20×9 ft",
+    "L": 4.27,
+    "W": 6.10,
+    "H": 2.74,
+    "seats": [ { "x": 2.14, "y": 1.0, "z": 4.0 } ],
+    "speakers": [ { "x": 0.8, "y": 1.0, "z": 0.5 }, { "x": 3.47, "y": 1.0, "z": 0.5 } ]
+  },
+  {
+    "id": "open_basement",
+    "label": "Open Basement 18×26×8 ft",
+    "L": 5.49,
+    "W": 7.92,
+    "H": 2.44,
+    "seats": [ { "x": 2.74, "y": 1.0, "z": 5.0 } ],
+    "speakers": [ { "x": 1.0, "y": 1.0, "z": 0.5 }, { "x": 4.49, "y": 1.0, "z": 0.5 } ]
+  }
+]

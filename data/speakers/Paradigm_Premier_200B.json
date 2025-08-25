@@ -1,0 +1,14 @@
+{
+  "brand": "Paradigm",
+  "model": "Premier 200B",
+  "type": "bookshelf",
+  "sensitivity_db": 88,
+  "impedance_ohm_min": 3.2,
+  "f_low_f3_hz": 50,
+  "form_factor": "bookshelf",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "brand": "MartinLogan",
+  "model": "Motion 35XTi",
+  "type": "bookshelf",
+  "sensitivity_db": 92,
+  "impedance_ohm_min": 3.7,
+  "f_low_f3_hz": 50,
+  "form_factor": "bookshelf",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

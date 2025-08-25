@@ -1,0 +1,14 @@
+{
+  "brand": "Sony",
+  "model": "STRAN1000",
+  "type": "avr",
+  "power_w_8ohm_all": 120,
+  "power_w_4ohm_all": 150,
+  "processing": "DCAC",
+  "channels": 7,
+  "preouts": false,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

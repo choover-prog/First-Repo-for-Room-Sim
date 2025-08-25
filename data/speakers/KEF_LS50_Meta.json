@@ -1,0 +1,21 @@
+{
+  "brand": "KEF",
+  "model": "LS50 Meta",
+  "type": "bookshelf",
+  "sensitivity_db": 85,
+  "impedance_ohm_min": 3.2,
+  "f_low_f3_hz": 79,
+  "form_factor": "bookshelf",
+  "spinorama": {
+    "freq_hz": [
+      100
+    ],
+    "on_axis_db": [
+      0
+    ]
+  },
+  "data_quality": {
+    "tier": "A",
+    "confidence_0_1": 0.9
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "brand": "GoldenEar",
+  "model": "Triton 7",
+  "type": "floorstanding",
+  "sensitivity_db": 89,
+  "impedance_ohm_min": 3,
+  "f_low_f3_hz": 29,
+  "form_factor": "floorstanding",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

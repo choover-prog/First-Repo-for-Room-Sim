@@ -1,4 +1,42 @@
 {
-  "speakers": ["JBL_Studio_590.json","KEF_Q350.json","Revel_F206.json"],
-  "amps": ["Denon_X3800H.json","Emotiva_BasX_A3.json"]
+  "speakers": [
+    "BowersWilkins_603S2.json",
+    "Buchardt_S400.json",
+    "Definitive_BP9060.json",
+    "Dynaudio_Evoke_10.json",
+    "ELAC_Debut2_B6.json",
+    "Focal_Aria_906.json",
+    "GoldenEar_Triton_7.json",
+    "JBL_Arena_130.json",
+    "JBL_Studio_590.json",
+    "KEF_LS50_Meta.json",
+    "KEF_Q350.json",
+    "Klipsch_RP600M.json",
+    "MartinLogan_Motion_35XTi.json",
+    "MonitorAudio_Bronze_2.json",
+    "Paradigm_Premier_200B.json",
+    "Pioneer_SPFS52.json",
+    "Polk_Signature_S55.json",
+    "QAcoustics_3020i.json",
+    "Revel_F206.json",
+    "Revel_M106.json",
+    "SVS_Ultra_Book.json",
+    "Sony_SSCS3.json",
+    "Wharfedale_Denton_85.json"
+  ],
+  "amps": [
+    "Anthem_MRX740.json",
+    "Arcam_AVR10.json",
+    "Denon_X2800H.json",
+    "Denon_X3800H.json",
+    "Denon_X4800H.json",
+    "Emotiva_BasX_A2.json",
+    "Emotiva_BasX_A3.json",
+    "Marantz_SR8015.json",
+    "NAD_T778.json",
+    "Onkyo_TXNR7100.json",
+    "Pioneer_VSX_LX505.json",
+    "Sony_STRAN1000.json",
+    "Yamaha_RXA6A.json"
+  ]
 }

@@ -1,0 +1,14 @@
+{
+  "brand": "Anthem",
+  "model": "MRX740",
+  "type": "avr",
+  "power_w_8ohm_all": 140,
+  "power_w_4ohm_all": 170,
+  "processing": "ARC",
+  "channels": 7,
+  "preouts": true,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

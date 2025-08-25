@@ -4,6 +4,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { firstReflectionPoints } from './lib/reflect.js';
+import { ReflectionLayer } from './render/ReflectionLayer.js';
+import { getMicLayout } from './lib/calib.js';
+import { buildReport } from './lib/pdf.js';
 
 const mToFt = 3.28084;
 
@@ -12,12 +16,29 @@ const container   = document.getElementById('view');
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
+const reflectionsToggle = document.getElementById('reflectionsT');
 const fileInput   = document.getElementById('file');
 const loadSample  = document.getElementById('loadSample');
 const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+const guideBtn    = document.getElementById('btnGuide');
+const roomTemplateSel = document.getElementById('roomTemplateSel');
+const roomLEl    = document.getElementById('roomL');
+const roomWEl    = document.getElementById('roomW');
+const roomHEl    = document.getElementById('roomH');
+const micsToggle = document.getElementById('micsT');
+const micLayoutSel = document.getElementById('micLayoutSel');
+const btnExportMics = document.getElementById('btnExportMics');
+const btnExportPDF = document.getElementById('btnExportPDF');
+
+function tip(el, key, text) {
+  if (isTooltipsEnabled() && el) {
+    el.setAttribute('title', text);
+    el.dataset.tip = key;
+  }
+}
 (function addSettingsStrip(){
   const ui = document.getElementById('ui');
   if (!ui || document.getElementById('settingsStrip')) return;
@@ -40,11 +61,20 @@ const labelEl     = document.getElementById('measureLabel');
   ui.prepend(div);
   div.querySelector('#personaSel').onchange = (e)=> setPersona(e.target.value);
   div.querySelector('#tipsChk').onchange = (e)=> setTooltipsEnabled(e.target.checked);
-  div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
+  div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body, true);
 })();
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
+guideBtn.onclick = () => mountOnboarding(document.body, true);
+loadRoomTemplates();
+tip(reflectionsToggle,'refl','Show first reflection points');
+tip(roomTemplateSel,'roomTpl','Load preset room dimensions');
+tip(micsToggle,'mics','Toggle mic positions');
+tip(micLayoutSel,'micLayout','Mic layout style');
+tip(btnExportMics,'micsExport','Export mic positions as JSON');
+tip(btnExportPDF,'pdf','Export report as PDF');
+tip(btnGuide,'guide','Restart onboarding');
 
 
 // Renderer / Scene / Camera
@@ -83,6 +113,50 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
+// Reflections
+const reflectionLayer = new ReflectionLayer(scene);
+reflectionLayer.setVisible(false);
+let roomBox = { L: 5, W: 4, H: 3 };
+let speakerPos = [];
+let listenerPos = [];
+function recalcReflections() {
+  const hits = firstReflectionPoints({ roomBox, speakerPos, listenerPos });
+  reflectionLayer.setPoints(hits);
+}
+const seatGroup = new THREE.Group();
+scene.add(seatGroup);
+const speakerGroup = new THREE.Group();
+scene.add(speakerGroup);
+const micGroup = new THREE.Group();
+micGroup.visible = false;
+scene.add(micGroup);
+let micPositions = [];
+
+let roomTemplates = [];
+async function loadRoomTemplates() {
+  try {
+    const r = await fetch('/data/rooms/templates.json');
+    roomTemplates = await r.json();
+    roomTemplateSel.innerHTML = '<option value="">Custom</option>' +
+      roomTemplates.map(t=>`<option value="${t.id}">${t.label}</option>`).join('');
+    const saved = localStorage.getItem('app.roomTemplateId');
+    if (saved) { roomTemplateSel.value = saved; applyTemplate(saved); }
+  } catch (e) { /* noop */ }
+}
+function applyTemplate(id) {
+  const tpl = roomTemplates.find(t=>t.id===id);
+  if (!tpl) return;
+  roomLEl.value = tpl.L;
+  roomWEl.value = tpl.W;
+  roomHEl.value = tpl.H;
+  roomBox = { L: tpl.L, W: tpl.W, H: tpl.H };
+  seatGroup.clear(); listenerPos = [];
+  (tpl.seats||[]).forEach(p=>{ const m=makeMarker(new THREE.Vector3(p.x,p.y,p.z)); seatGroup.add(m); listenerPos.push({x:p.x,y:p.y,z:p.z}); });
+  speakerGroup.clear(); speakerPos = [];
+  (tpl.speakers||[]).forEach(p=>{ const m=makeMarker(new THREE.Vector3(p.x,p.y,p.z)); speakerGroup.add(m); speakerPos.push({x:p.x,y:p.y,z:p.z}); });
+  recalcReflections();
+}
+
 // Pickable meshes (for measuring)
 let pickables = [];
 
@@ -93,6 +167,50 @@ let root = null;
 // ---------- Utility UI ----------
 gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
+reflectionsToggle.onchange = e => {
+  reflectionLayer.setVisible(e.target.checked);
+  if (e.target.checked) recalcReflections();
+};
+roomTemplateSel.onchange = () => {
+  const id = roomTemplateSel.value;
+  localStorage.setItem('app.roomTemplateId', id);
+  applyTemplate(id);
+};
+roomLEl.oninput = roomWEl.oninput = roomHEl.oninput = () => {
+  roomBox = { L: parseFloat(roomLEl.value), W: parseFloat(roomWEl.value), H: parseFloat(roomHEl.value) };
+  recalcReflections();
+};
+micsToggle.onchange = e => {
+  micGroup.visible = e.target.checked;
+};
+micLayoutSel.onchange = () => {
+  const layout = getMicLayout(micLayoutSel.value);
+  micGroup.clear(); micPositions = [];
+  if (!layout.length || !listenerPos.length) return;
+  const mlp = listenerPos[0];
+  layout.forEach(p => {
+    const pos = { x: mlp.x + p[0], y: mlp.y, z: mlp.z + p[1] };
+    micGroup.add(makeMicMarker(new THREE.Vector3(pos.x, pos.y, pos.z)));
+    micPositions.push(pos);
+  });
+  micsToggle.checked = true;
+  micGroup.visible = true;
+};
+btnExportMics.onclick = () => {
+  const blob = new Blob([JSON.stringify(micPositions, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mics.json';
+  a.click();
+};
+btnExportPDF.onclick = () => {
+  const state = {
+    persona: getPersona(),
+    room: roomBox,
+    overlays: { reflections: reflectionsToggle.checked, mics: micsToggle.checked }
+  };
+  buildReport({ canvas: renderer.domElement, state, badges: {} });
+};
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {
@@ -246,6 +364,15 @@ function makeMarker(pos) {
   const mesh = new THREE.Mesh(g, m);
   mesh.position.copy(pos);
   mesh.renderOrder = 999; // keep on top a bit
+  return mesh;
+}
+
+function makeMicMarker(pos) {
+  const g = new THREE.SphereGeometry(0.03, 8, 8);
+  const m = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const mesh = new THREE.Mesh(g, m);
+  mesh.position.copy(pos);
+  mesh.renderOrder = 999;
   return mesh;
 }
 

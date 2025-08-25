@@ -1,0 +1,14 @@
+{
+  "brand": "Focal",
+  "model": "Aria 906",
+  "type": "bookshelf",
+  "sensitivity_db": 89,
+  "impedance_ohm_min": 3.5,
+  "f_low_f3_hz": 55,
+  "form_factor": "bookshelf",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

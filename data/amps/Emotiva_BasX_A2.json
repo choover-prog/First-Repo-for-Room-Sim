@@ -1,0 +1,14 @@
+{
+  "brand": "Emotiva",
+  "model": "BasX A2",
+  "type": "avr",
+  "power_w_8ohm_all": 160,
+  "power_w_4ohm_all": 250,
+  "processing": null,
+  "channels": 2,
+  "preouts": false,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

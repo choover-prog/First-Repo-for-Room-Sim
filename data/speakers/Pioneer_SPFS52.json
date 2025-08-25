@@ -1,0 +1,14 @@
+{
+  "brand": "Pioneer",
+  "model": "SPFS52",
+  "type": "floorstanding",
+  "sensitivity_db": 85,
+  "impedance_ohm_min": 4,
+  "f_low_f3_hz": 40,
+  "form_factor": "floorstanding",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

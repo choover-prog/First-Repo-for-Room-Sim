@@ -1,0 +1,21 @@
+{
+  "brand": "Revel",
+  "model": "M106",
+  "type": "bookshelf",
+  "sensitivity_db": 86,
+  "impedance_ohm_min": 3.3,
+  "f_low_f3_hz": 55,
+  "form_factor": "bookshelf",
+  "spinorama": {
+    "freq_hz": [
+      100
+    ],
+    "on_axis_db": [
+      0
+    ]
+  },
+  "data_quality": {
+    "tier": "A",
+    "confidence_0_1": 0.9
+  }
+}

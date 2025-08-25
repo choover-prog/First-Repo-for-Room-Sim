@@ -1,0 +1,14 @@
+{
+  "brand": "Onkyo",
+  "model": "TXNR7100",
+  "type": "avr",
+  "power_w_8ohm_all": 100,
+  "power_w_4ohm_all": 135,
+  "processing": "Dirac",
+  "channels": 9,
+  "preouts": true,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

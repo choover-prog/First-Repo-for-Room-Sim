@@ -1,0 +1,14 @@
+{
+  "brand": "ELAC",
+  "model": "Debut2 B6",
+  "type": "bookshelf",
+  "sensitivity_db": 87,
+  "impedance_ohm_min": 4,
+  "f_low_f3_hz": 44,
+  "form_factor": "bookshelf",
+  "spinorama": null,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

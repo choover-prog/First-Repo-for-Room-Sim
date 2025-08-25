@@ -1,0 +1,14 @@
+{
+  "brand": "Denon",
+  "model": "X2800H",
+  "type": "avr",
+  "power_w_8ohm_all": 95,
+  "power_w_4ohm_all": 125,
+  "processing": "Audyssey",
+  "channels": 7,
+  "preouts": true,
+  "data_quality": {
+    "tier": "C",
+    "confidence_0_1": 0.5
+  }
+}

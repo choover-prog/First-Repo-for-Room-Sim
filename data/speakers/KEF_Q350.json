@@ -1,0 +1,25 @@
+{
+  "brand": "KEF",
+  "model": "Q350",
+  "type": "bookshelf",
+  "sensitivity_db": 87.0,
+  "impedance_ohm_nom": 8,
+  "impedance_ohm_min": 3.7,
+  "power_recommend_w": { "min": 25, "max": 120 },
+  "max_spl_db_1m": 108,
+  "f_low_f3_hz": 63,
+  "dimensions_mm": { "h": 358, "w": 210, "d": 306 },
+  "dispersion": { "h_deg": 100, "v_deg": 100 },
+  "directivity_hint": { "woofer_diameter_in": 6.5, "tweeter_type": "concentric", "waveguide": true, "xo_hz": 2500 },
+  "spinorama": { "freq_hz": [], "on_axis_db": [] },
+  "data_quality": {
+    "tier": "C",
+    "provenance": ["manufacturer specs"],
+    "spin_format": "none",
+    "freq_res_hz": 5,
+    "smoothing_oct": 0.333,
+    "estimation": { "used": true, "methods": ["directivity_template"], "notes": "Concentric driver; estimated off-axis" },
+    "confidence_0_1": 0.6
+  },
+  "sources": []
+}

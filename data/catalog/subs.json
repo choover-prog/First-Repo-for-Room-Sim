@@ -1,0 +1,14 @@
+[
+  {
+    "sku": "SUB-10",
+    "brand": "SubCo",
+    "model": "10in",
+    "category": "sub",
+    "price_usd": 299.0,
+    "images": ["/images/sub.png"],
+    "affiliate": {},
+    "badges": { "tier": "C", "confidence": 0.7 },
+    "notes": "",
+    "options": []
+  }
+]

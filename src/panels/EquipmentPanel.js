@@ -1,6 +1,8 @@
 import { requiredWattsToHitSPL, headroomDb } from '../lib/spl.js';
 import { simplePreferenceScore } from '../lib/preference.js';
 import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js';
+import { searchCatalog, findSku } from '../lib/catalog.js';
+import { cart } from '../lib/cart.js';
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
 
 async function loadJSON(url) {
@@ -22,6 +24,14 @@ function el(html) {
 
 function tipAttr(key, text) {
   return isTooltipsEnabled() ? `data-tip="${key}" title="${text.replace(/"/g,'&quot;')}"` : '';
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1f29;color:#e8eaed;padding:6px 12px;border-radius:6px;z-index:3000';
+  document.body.appendChild(t);
+  setTimeout(()=> t.remove(), 1500);
 }
 
 export function mountEquipmentPanel(container) {
@@ -84,13 +94,44 @@ export function mountEquipmentPanel(container) {
     const conf = confidenceFromQuality(q);
     const shownPref = blendScore(rawPref, conf);
 
+    const spCat = searchCatalog(`${spData.brand} ${spData.model}`)[0];
+    const ampCat = searchCatalog(`${ampData.brand} ${ampData.model}`)[0];
+    function addControls(item) {
+      if (!item) return '';
+      const existing = cart.items.find(i => i.sku === item.sku);
+      if (existing) {
+        return `<button data-act="dec" data-sku="${item.sku}">-</button> ${existing.qty} <button data-act="inc" data-sku="${item.sku}">+</button>`;
+      }
+      return `<button class="btnAddCart" data-sku="${item.sku}">Add to Cart</button>`;
+    }
     stats.innerHTML = `
-      Speaker: <b>${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
-      Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
+      Speaker: <b>${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz) ${spCat ? `$${spCat.price_usd.toFixed(2)} ${addControls(spCat)}` : ''}<br/>
+      Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W) ${ampCat ? `$${ampCat.price_usd.toFixed(2)} ${addControls(ampCat)}` : ''}<br/>
       Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
       Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>
       Headroom (8Ω rated): <b>${head.toFixed(1)} dB</b>
     `;
+    stats.querySelectorAll('.btnAddCart').forEach(btn => {
+      btn.onclick = () => {
+        const sku = btn.dataset.sku;
+        const item = findSku(sku);
+        if (item) {
+          cart.add(item);
+          showToast('Added to cart');
+          renderStats();
+        }
+      };
+    });
+    stats.querySelectorAll('button[data-act]').forEach(btn => {
+      btn.onclick = () => {
+        const sku = btn.dataset.sku;
+        const it = cart.items.find(i => i.sku === sku);
+        if (!it) return;
+        if (btn.dataset.act === 'inc') cart.setQty(sku, it.qty + 1);
+        if (btn.dataset.act === 'dec') cart.setQty(sku, it.qty - 1);
+        renderStats();
+      };
+    });
     warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';
   }
 

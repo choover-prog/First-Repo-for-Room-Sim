@@ -1,0 +1,16 @@
+[
+  {
+    "sku": "JBL-590",
+    "brand": "JBL",
+    "model": "Studio 590",
+    "category": "speaker",
+    "price_usd": 999.0,
+    "images": ["/images/jbl590.png"],
+    "affiliate": {
+      "amazon": "https://example.com/jbl590?tag=AFF"
+    },
+    "badges": { "tier": "A", "confidence": 0.9 },
+    "notes": "Floorstanding; good to 55 Hz in-room",
+    "options": []
+  }
+]

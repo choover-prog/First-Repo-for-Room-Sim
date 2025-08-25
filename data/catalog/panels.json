@@ -1,0 +1,14 @@
+[
+  {
+    "sku": "PANEL-A1",
+    "brand": "PanelCo",
+    "model": "Acoustic Panel",
+    "category": "panel",
+    "price_usd": 59.0,
+    "images": ["/images/panel.png"],
+    "affiliate": {},
+    "badges": { "tier": "A", "confidence": 0.95 },
+    "notes": "",
+    "options": []
+  }
+]

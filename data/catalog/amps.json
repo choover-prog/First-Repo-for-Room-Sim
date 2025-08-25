@@ -1,0 +1,14 @@
+[
+  {
+    "sku": "AMP-100",
+    "brand": "Acme",
+    "model": "100W",
+    "category": "amp",
+    "price_usd": 499.0,
+    "images": ["/images/amp.png"],
+    "affiliate": {},
+    "badges": { "tier": "B", "confidence": 0.8 },
+    "notes": "Entry amp",
+    "options": []
+  }
+]

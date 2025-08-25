@@ -4,6 +4,10 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { loadCatalog } from './lib/catalog.js';
+import { cart } from './lib/cart.js';
+import { mountCartPanel } from './ui/CartPanel.js';
+import { checkoutAffiliate, checkoutDirect } from './commerce/checkout.js';
 
 const mToFt = 3.28084;
 
@@ -42,6 +46,18 @@ const labelEl     = document.getElementById('measureLabel');
   div.querySelector('#tipsChk').onchange = (e)=> setTooltipsEnabled(e.target.checked);
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
+
+await loadCatalog();
+async function handleCheckout(mode = cart.mode) {
+  if (mode === 'affiliate') return checkoutAffiliate(cart);
+  return checkoutDirect(cart);
+}
+const cartPanel = mountCartPanel({ rootEl: document.body, onCheckout: handleCheckout });
+const btnCart = document.getElementById('btnCart');
+btnCart.onclick = () => cartPanel.toggle();
+function updateCartBtn() { btnCart.textContent = `Cart (${cart.items.reduce((a,i)=>a+i.qty,0)})`; }
+window.addEventListener('cart:change', updateCartBtn);
+updateCartBtn();
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);

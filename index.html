@@ -42,6 +42,13 @@
           <label><input type="checkbox" id="axesT" checked /> Axes</label>
         </div>
 
+        <div class="row">
+          <label><input type="checkbox" id="lfHeatmapT"> LF Heatmap</label>
+          <label>Room L (m) <input id="roomL" type="number" step="0.1" value="5.0" style="width:70px"></label>
+          <label>W <input id="roomW" type="number" step="0.1" value="4.0" style="width:70px"></label>
+          <label>H <input id="roomH" type="number" step="0.1" value="2.4" style="width:70px"></label>
+        </div>
+
         <div class="sep"></div>
 
         <div class="row">
@@ -51,6 +58,11 @@
             <option value="ft">Feet</option>
           </select>
           <button id="clearMeasure">Clear</button>
+        </div>
+
+        <div class="row">
+          <button id="btnExportPNG">Export PNG</button>
+          <button id="btnExportJSON">Export JSON</button>
         </div>
 
         <div id="stats" class="muted"></div>

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
+import { captureCanvasPNG, downloadJSON, downloadBlobURL } from './lib/report.js';
 
 const mToFt = 3.28084;
 
@@ -15,6 +17,10 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+const lfChk = document.getElementById('lfHeatmapT');
+const rL = document.getElementById('roomL');
+const rW = document.getElementById('roomW');
+const rH = document.getElementById('roomH');
 
 // Renderer / Scene / Camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -22,6 +28,7 @@ renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+const canvasEl = renderer.domElement;
 
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0d10);
@@ -52,6 +59,8 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
+const lfLayer = new LFHeatmapLayer(scene);
+
 // Pickable meshes (for measuring)
 let pickables = [];
 
@@ -62,6 +71,29 @@ let root = null;
 // ---------- Utility UI ----------
 gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
+
+function syncLF(){ lfLayer.setRoomDims({ L:+(rL?.value||5), W:+(rW?.value||4), H:+(rH?.value||2.4) }); if(lfChk?.checked) lfLayer.update(); }
+lfChk?.addEventListener('change', ()=> lfLayer.setEnabled(lfChk.checked));
+[rL,rW,rH].forEach(el=> el?.addEventListener('input', syncLF));
+
+function collectState() {
+  const persona = localStorage.getItem('app.persona') || 'diy';
+  const tooltips = localStorage.getItem('app.tooltipsEnabled') === 'true';
+  const L = parseFloat(document.getElementById('roomL')?.value || '5');
+  const W = parseFloat(document.getElementById('roomW')?.value || '4');
+  const H = parseFloat(document.getElementById('roomH')?.value || '2.4');
+  const spSel = document.getElementById('spSel')?.value || null;
+  const ampSel = document.getElementById('ampSel')?.value || null;
+  return { persona, tooltips, room: { L, W, H }, selection: { speaker: spSel, amp: ampSel } };
+}
+
+document.getElementById('btnExportPNG')?.addEventListener('click', async () => {
+  const url = await captureCanvasPNG(canvasEl);
+  downloadBlobURL(url, `room-view-${Date.now()}.png`);
+});
+document.getElementById('btnExportJSON')?.addEventListener('click', () => {
+  downloadJSON(collectState(), `room-config-${Date.now()}.json`);
+});
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {

@@ -1,0 +1,25 @@
+{
+  "brand": "Revel",
+  "model": "F206",
+  "type": "floorstanding",
+  "sensitivity_db": 88.5,
+  "impedance_ohm_nom": 8,
+  "impedance_ohm_min": 3.2,
+  "power_recommend_w": { "min": 50, "max": 300 },
+  "max_spl_db_1m": 112,
+  "f_low_f3_hz": 39,
+  "dimensions_mm": { "h": 1054, "w": 221, "d": 307 },
+  "dispersion": { "h_deg": 90, "v_deg": 60 },
+  "directivity_hint": { "woofer_diameter_in": 6.5, "tweeter_type": "dome", "waveguide": true, "xo_hz": 2300 },
+  "spinorama": { "freq_hz": [], "on_axis_db": [] },
+  "data_quality": {
+    "tier": "B",
+    "provenance": ["third-party lab review"],
+    "spin_format": "partial",
+    "freq_res_hz": 2,
+    "smoothing_oct": 0.167,
+    "estimation": { "used": true, "methods": ["partial_to_cta_weights"], "notes": "Partial polars mapped to CTA weights" },
+    "confidence_0_1": 0.75
+  },
+  "sources": []
+}

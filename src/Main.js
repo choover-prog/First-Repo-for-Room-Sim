@@ -1,9 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
-import { mountOnboarding } from './ui/Onboarding.js';
-import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 
 const mToFt = 3.28084;
 
@@ -18,34 +15,6 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
-(function addSettingsStrip(){
-  const ui = document.getElementById('ui');
-  if (!ui || document.getElementById('settingsStrip')) return;
-  const div = document.createElement('div');
-  div.id = 'settingsStrip';
-  div.style = 'margin-bottom:8px;border-bottom:1px solid #232832;padding-bottom:8px';
-  const persona = getPersona();
-  const opts = personasList().map(p => `<option value="${p.id}" ${p.id===persona?'selected':''}>${p.label}</option>`).join('');
-  div.innerHTML = `
-    <div class="row" style="align-items:center;gap:8px">
-      <label>Persona:
-        <select id="personaSel">${opts}</select>
-      </label>
-      <label>Tooltips:
-        <input id="tipsChk" type="checkbox" ${isTooltipsEnabled()?'checked':''}/>
-      </label>
-      <button id="resetOnb" title="Show first-time persona tutorial again">Run Tutorial</button>
-    </div>
-  `;
-  ui.prepend(div);
-  div.querySelector('#personaSel').onchange = (e)=> setPersona(e.target.value);
-  div.querySelector('#tipsChk').onchange = (e)=> setTooltipsEnabled(e.target.checked);
-  div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
-})();
-
-mountEquipmentPanel(document.getElementById('ui'));
-mountOnboarding(document.body);
-
 
 // Renderer / Scene / Camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });

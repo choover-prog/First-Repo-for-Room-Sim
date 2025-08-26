@@ -4,6 +4,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
+import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
+import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
+import { BadgeManager } from './ui/Badges.js';
 
 const mToFt = 3.28084;
 
@@ -18,6 +21,19 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+
+// New UI elements
+const roomLengthInput = document.getElementById('roomLength');
+const roomWidthInput  = document.getElementById('roomWidth');
+const roomHeightInput = document.getElementById('roomHeight');
+const updateDimensionsBtn = document.getElementById('updateDimensions');
+const heatmapToggle = document.getElementById('heatmapToggle');
+const exportPNGBtn = document.getElementById('exportPNG');
+const exportJSONBtn = document.getElementById('exportJSON');
+const targetSizeInput = document.getElementById('targetSize');
+const applyCustomScaleBtn = document.getElementById('applyCustomScale');
+const snapZoomBtn = document.getElementById('snapZoom');
+const resetViewBtn = document.getElementById('resetView');
 (function addSettingsStrip(){
   const ui = document.getElementById('ui');
   if (!ui || document.getElementById('settingsStrip')) return;
@@ -45,7 +61,6 @@ const labelEl     = document.getElementById('measureLabel');
 
 mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
-
 
 // Renderer / Scene / Camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -83,6 +98,12 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
+// Initialize new systems
+let lfHeatmap = null;
+let badgeManager = null;
+let measurements = [];
+let currentPersona = null;
+
 // Pickable meshes (for measuring)
 let pickables = [];
 
@@ -90,9 +111,103 @@ let pickables = [];
 const loader = new GLTFLoader();
 let root = null;
 
+// Initialize new systems
+lfHeatmap = new LFHeatmapLayer(scene);
+currentPersona = { tooltipsEnabled: isTooltipsEnabled() };
+badgeManager = new BadgeManager(currentPersona);
+
 // ---------- Utility UI ----------
 gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
+
+// Room dimensions
+updateDimensionsBtn.addEventListener('click', () => {
+  const length = parseFloat(roomLengthInput.value);
+  const width = parseFloat(roomWidthInput.value);
+  const height = parseFloat(roomHeightInput.value);
+  
+  if (length > 0 && width > 0 && height > 0) {
+    lfHeatmap.updateDimensions(length, width, height);
+    console.log(`Updated room dimensions: ${length}×${width}×${height} ft`);
+  }
+});
+
+// Heatmap toggle
+heatmapToggle.addEventListener('change', (e) => {
+  if (e.target.checked) {
+    lfHeatmap.show();
+  } else {
+    lfHeatmap.hide();
+  }
+});
+
+// Export functionality
+exportPNGBtn.addEventListener('click', async () => {
+  try {
+    const canvas = renderer.domElement;
+    const blob = await captureCanvasPNG(canvas, 'room-screenshot.png');
+    downloadBlobURL(blob, 'room-screenshot.png');
+  } catch (error) {
+    console.error('Export PNG failed:', error);
+    alert('Failed to export PNG. See console for details.');
+  }
+});
+
+exportJSONBtn.addEventListener('click', () => {
+  try {
+    const roomData = {
+      length: parseFloat(roomLengthInput.value),
+      width: parseFloat(roomWidthInput.value),
+      height: parseFloat(roomHeightInput.value)
+    };
+    
+    const heatmapData = lfHeatmap.getState();
+    const equipment = {}; // TODO: Add equipment data
+    
+    const report = generateRoomReport(roomData, heatmapData, measurements, equipment);
+    const jsonString = JSON.stringify(report, null, 2);
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    downloadBlobURL(blob, 'room-report.json');
+  } catch (error) {
+    console.error('Export JSON failed:', error);
+    alert('Failed to export JSON. See console for details.');
+  }
+});
+
+// Custom scaling
+applyCustomScaleBtn.addEventListener('click', () => {
+  if (root) {
+    const targetSize = parseFloat(targetSizeInput.value);
+    applyCustomScale(root, targetSize);
+    
+    // Re-center and update view
+    const box = new THREE.Box3().setFromObject(root);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+    
+    root.position.sub(center);
+    snapZoomToModel(root);
+    
+    // Update stats
+    statsEl.textContent =
+      `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+      `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+  }
+});
+
+snapZoomBtn.addEventListener('click', () => {
+  if (root) {
+    snapZoomToModel(root);
+  }
+});
+
+resetViewBtn.addEventListener('click', () => {
+  camera.position.set(4, 2, 6);
+  controls.target.set(0, 0, 0);
+  controls.update();
+});
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {
@@ -104,6 +219,42 @@ function prepMaterialsAndHideCube(obj) {
     // hide a stray Blender Cube shell if present
     if (/^cube$/i.test(o.name)) o.visible = false;
   });
+}
+
+// Custom scaling function for when auto-scaling fails
+function applyCustomScale(obj, targetSize = 8) {
+  const box = new THREE.Box3().setFromObject(obj);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+  
+  const longest = Math.max(size.x, size.y, size.z);
+  if (isFinite(longest) && longest > 0) {
+    const scale = targetSize / longest;
+    obj.scale.setScalar(scale);
+    console.log(`Applied custom scale: ${scale.toFixed(3)}x (target: ${targetSize}m)`);
+  }
+}
+
+// Snap zoom function for better initial view
+function snapZoomToModel(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
+  const size = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  
+  // Calculate optimal camera distance
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  const maxDim = Math.max(size.x, size.y, size.z);
+  let dist = maxDim / (2 * Math.tan(fov / 2));
+  dist *= 1.2; // Slightly closer for better framing
+  
+  // Position camera for optimal view
+  camera.position.set(dist * 0.7, dist * 0.5, dist * 0.8);
+  controls.target.copy(center);
+  controls.update();
+  
+  console.log(`Snap zoom applied - Camera distance: ${dist.toFixed(2)}m`);
 }
 
 function buildPickables(obj) {
@@ -135,18 +286,13 @@ function centerScaleAndFrame(obj) {
   // center to origin
   obj.position.sub(ct);
 
-  // frame
-  const fov = THREE.MathUtils.degToRad(camera.fov);
-  let dist = Math.max(sz.x, sz.y, sz.z) / (2 * Math.tan(fov / 2));
-  dist *= 1.6;
+  // Apply snap zoom for better initial view
+  snapZoomToModel(obj);
 
+  // Update camera near/far planes
   camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
   camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
   camera.updateProjectionMatrix();
-
-  camera.position.set(dist * 0.6, dist * 0.4, dist);
-  controls.target.set(0, 0, 0);
-  controls.update();
 
   grid.position.y = box2.min.y;
 
@@ -238,6 +384,9 @@ function clearMeasure() {
   if (markerB) { scene.remove(markerB); markerB = null; }
   if (line)    { scene.remove(line);    line = null; }
   labelEl.style.display = 'none';
+  
+  // Clear stored measurements
+  measurements = [];
 }
 
 function makeMarker(pos) {
@@ -300,6 +449,17 @@ renderer.domElement.addEventListener('pointerdown', e => {
       updateLine();
     }
     labelEl.style.display = 'block';
+    
+    // Store measurement for export
+    const distance = pA.distanceTo(pB);
+    const units = unitsSel.value;
+    measurements.push({
+      pointA: { x: pA.x, y: pA.y, z: pA.z },
+      pointB: { x: pB.x, y: pB.y, z: pB.z },
+      distance: distance,
+      units: units,
+      timestamp: new Date().toISOString()
+    });
   }
   else {
     // start over with a new A

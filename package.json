@@ -1,17 +1,17 @@
 {
-  "name": "room-viewer",
+  "name": "media-room-cal-sim",
+  "version": "1.0.0",
   "private": true,
-  "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "start": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5174"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "three": "^0.161.0"
+    "three": "^0.155.0"
   },
   "devDependencies": {
-    "vite": "^5.4.0"
+    "vite": "^5.2.0"
   }
 }

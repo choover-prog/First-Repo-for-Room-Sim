@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
@@ -68,6 +69,7 @@ renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+const gl = renderer.getContext();
 
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0d10);
@@ -109,6 +111,15 @@ let pickables = [];
 
 // GLTF Loader
 const loader = new GLTFLoader();
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('/libs/draco/');
+loader.setDRACOLoader(dracoLoader);
+loader.manager.onError = (url) => {
+  console.error('Failed to load resource:', url);
+  if (/draco/i.test(url)) {
+    console.error('DRACO decoder missing. Place decoders in /public/libs/draco/');
+  }
+};
 let root = null;
 
 // Initialize new systems
@@ -121,93 +132,107 @@ gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
 
 // Room dimensions
-updateDimensionsBtn.addEventListener('click', () => {
-  const length = parseFloat(roomLengthInput.value);
-  const width = parseFloat(roomWidthInput.value);
-  const height = parseFloat(roomHeightInput.value);
-  
-  if (length > 0 && width > 0 && height > 0) {
-    lfHeatmap.updateDimensions(length, width, height);
-    console.log(`Updated room dimensions: ${length}×${width}×${height} ft`);
-  }
-});
+if (updateDimensionsBtn && roomLengthInput && roomWidthInput && roomHeightInput) {
+  updateDimensionsBtn.addEventListener('click', () => {
+    const length = parseFloat(roomLengthInput.value);
+    const width = parseFloat(roomWidthInput.value);
+    const height = parseFloat(roomHeightInput.value);
+
+    if (length > 0 && width > 0 && height > 0) {
+      lfHeatmap.updateDimensions(length, width, height);
+      console.log(`Updated room dimensions: ${length}×${width}×${height} ft`);
+    }
+  });
+}
 
 // Heatmap toggle
-heatmapToggle.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    lfHeatmap.show();
-  } else {
-    lfHeatmap.hide();
-  }
-});
+if (heatmapToggle) {
+  heatmapToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      lfHeatmap.show();
+    } else {
+      lfHeatmap.hide();
+    }
+  });
+}
 
 // Export functionality
-exportPNGBtn.addEventListener('click', async () => {
-  try {
-    const canvas = renderer.domElement;
-    const blob = await captureCanvasPNG(canvas, 'room-screenshot.png');
-    downloadBlobURL(blob, 'room-screenshot.png');
-  } catch (error) {
-    console.error('Export PNG failed:', error);
-    alert('Failed to export PNG. See console for details.');
-  }
-});
+if (exportPNGBtn) {
+  exportPNGBtn.addEventListener('click', async () => {
+    try {
+      const canvas = renderer.domElement;
+      const blob = await captureCanvasPNG(canvas, 'room-screenshot.png');
+      downloadBlobURL(blob, 'room-screenshot.png');
+    } catch (error) {
+      console.error('Export PNG failed:', error);
+      alert('Failed to export PNG. See console for details.');
+    }
+  });
+}
 
-exportJSONBtn.addEventListener('click', () => {
-  try {
-    const roomData = {
-      length: parseFloat(roomLengthInput.value),
-      width: parseFloat(roomWidthInput.value),
-      height: parseFloat(roomHeightInput.value)
-    };
-    
-    const heatmapData = lfHeatmap.getState();
-    const equipment = {}; // TODO: Add equipment data
-    
-    const report = generateRoomReport(roomData, heatmapData, measurements, equipment);
-    const jsonString = JSON.stringify(report, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    downloadBlobURL(blob, 'room-report.json');
-  } catch (error) {
-    console.error('Export JSON failed:', error);
-    alert('Failed to export JSON. See console for details.');
-  }
-});
+if (exportJSONBtn) {
+  exportJSONBtn.addEventListener('click', () => {
+    try {
+      const roomData = {
+        length: parseFloat(roomLengthInput?.value),
+        width: parseFloat(roomWidthInput?.value),
+        height: parseFloat(roomHeightInput?.value)
+      };
+
+      const heatmapData = lfHeatmap.getState();
+      const equipment = {}; // TODO: Add equipment data
+
+      const report = generateRoomReport(roomData, heatmapData, measurements, equipment);
+      const jsonString = JSON.stringify(report, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      downloadBlobURL(blob, 'room-report.json');
+    } catch (error) {
+      console.error('Export JSON failed:', error);
+      alert('Failed to export JSON. See console for details.');
+    }
+  });
+}
 
 // Custom scaling
-applyCustomScaleBtn.addEventListener('click', () => {
-  if (root) {
-    const targetSize = parseFloat(targetSizeInput.value);
-    applyCustomScale(root, targetSize);
-    
-    // Re-center and update view
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
-    
-    root.position.sub(center);
-    snapZoomToModel(root);
-    
-    // Update stats
-    statsEl.textContent =
-      `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
-      `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
-  }
-});
+if (applyCustomScaleBtn && targetSizeInput) {
+  applyCustomScaleBtn.addEventListener('click', () => {
+    if (root) {
+      const targetSize = parseFloat(targetSizeInput.value);
+      applyCustomScale(root, targetSize);
 
-snapZoomBtn.addEventListener('click', () => {
-  if (root) {
-    snapZoomToModel(root);
-  }
-});
+      // Re-center and update view
+      const box = new THREE.Box3().setFromObject(root);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
 
-resetViewBtn.addEventListener('click', () => {
-  camera.position.set(4, 2, 6);
-  controls.target.set(0, 0, 0);
-  controls.update();
-});
+      root.position.sub(center);
+      snapZoomToModel(root);
+
+      // Update stats
+      statsEl.textContent =
+        `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+        `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+    }
+  });
+}
+
+if (snapZoomBtn) {
+  snapZoomBtn.addEventListener('click', () => {
+    if (root) {
+      snapZoomToModel(root);
+    }
+  });
+}
+
+if (resetViewBtn) {
+  resetViewBtn.addEventListener('click', () => {
+    camera.position.set(4, 2, 6);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  });
+}
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {
@@ -257,6 +282,20 @@ function snapZoomToModel(obj) {
   console.log(`Snap zoom applied - Camera distance: ${dist.toFixed(2)}m`);
 }
 
+function fitToScene(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
+  const dist = sphere.radius / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
+  camera.position.set(
+    sphere.center.x + dist,
+    sphere.center.y + dist,
+    sphere.center.z + dist
+  );
+  controls.target.copy(sphere.center);
+  controls.update();
+  return dist;
+}
+
 function buildPickables(obj) {
   pickables = [];
   obj.traverse(o => { if (o.isMesh) pickables.push(o); });
@@ -286,8 +325,8 @@ function centerScaleAndFrame(obj) {
   // center to origin
   obj.position.sub(ct);
 
-  // Apply snap zoom for better initial view
-  snapZoomToModel(obj);
+  // Fit camera to scene
+  const camDist = fitToScene(obj);
 
   // Update camera near/far planes
   camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
@@ -299,6 +338,10 @@ function centerScaleAndFrame(obj) {
   statsEl.textContent =
     `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
     `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+
+  console.log(
+    `Mesh bbox: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m | camDist: ${camDist.toFixed(2)}m`
+  );
 }
 
 // ---------- Loaders ----------
@@ -315,6 +358,7 @@ function onParsed(gltf) {
     buildPickables(root);
 
     scene.add(root);
+    console.log('Added mesh to scene');
     centerScaleAndFrame(root);
   } catch (err) {
     console.error(err);
@@ -322,41 +366,51 @@ function onParsed(gltf) {
   }
 }
 
-function loadArrayBuffer(buf) {
+async function fetchAndLoad(url) {
+  statsEl.textContent = `Loading: ${url}`;
   try {
-    loader.parse(
-      buf, '', onParsed,
-      e => { console.error('GLB parse failed', e); alert('GLB parse failed (see console).'); }
-    );
+    const gltf = await loader.loadAsync(url);
+    onParsed(gltf);
   } catch (err) {
     console.error(err);
-    alert(`Unexpected parse error: ${err.message}`);
+    alert(`Could not load ${url}\n${err.message}`);
   }
 }
 
-function fetchAndLoad(url) {
-  statsEl.textContent = `Loading: ${url}`;
-  fetch(url)
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
-    .then(loadArrayBuffer)
-    .catch(err => { console.error(err); alert(`Could not load ${url}\n${err.message}`); });
-}
-
 // File input / Sample / Drag&Drop
-fileInput.addEventListener('change', e => {
+fileInput.addEventListener('change', async e => {
   const f = e.target.files?.[0];
   if (!f) return;
   statsEl.textContent = `Loading local file: ${f.name}`;
-  f.arrayBuffer().then(loadArrayBuffer).catch(err => { console.error(err); alert(`Read error: ${err.message}`); });
+  const url = URL.createObjectURL(f);
+  try {
+    const gltf = await loader.loadAsync(url);
+    onParsed(gltf);
+  } catch (err) {
+    console.error(err);
+    alert(`Read error: ${err.message}`);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 });
 
 loadSample.addEventListener('click', () => fetchAndLoad('/examples/sample-room.glb'));
 
 container.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
-container.addEventListener('drop', e => {
+container.addEventListener('drop', async e => {
   e.preventDefault();
   const f = e.dataTransfer.files?.[0];
-  if (f) f.arrayBuffer().then(loadArrayBuffer);
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  try {
+    const gltf = await loader.loadAsync(url);
+    onParsed(gltf);
+  } catch (err) {
+    console.error(err);
+    alert('Drop load failed (see console).');
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 });
 
 // ---------- Measure Mode ----------
@@ -519,6 +573,8 @@ window.addEventListener('resize', () => {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
+  const err = gl.getError();
+  if (err) console.error('WebGL error', err);
 
   if (measureOn) {
     // only draw label if we have a finished segment

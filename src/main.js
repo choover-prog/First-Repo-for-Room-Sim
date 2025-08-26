@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
@@ -68,6 +69,8 @@ renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 container.appendChild(renderer.domElement);
+const gl = renderer.getContext();
+let glErrorLogged = false;
 
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0d10);
@@ -107,8 +110,16 @@ let currentPersona = null;
 // Pickable meshes (for measuring)
 let pickables = [];
 
-// GLTF Loader
-const loader = new GLTFLoader();
+// GLTF Loader with DRACO support
+const loadingManager = new THREE.LoadingManager();
+loadingManager.onError = (url) => {
+  console.error(`Error loading ${url}. If using DRACO compression, place decoders in /public/libs/draco/`);
+};
+
+const loader = new GLTFLoader(loadingManager);
+const dracoLoader = new DRACOLoader(loadingManager);
+dracoLoader.setDecoderPath('/libs/draco/');
+loader.setDRACOLoader(dracoLoader);
 let root = null;
 
 // Initialize new systems
@@ -188,7 +199,7 @@ applyCustomScaleBtn.addEventListener('click', () => {
     box.getCenter(center);
     
     root.position.sub(center);
-    snapZoomToModel(root);
+    fitToScene(root);
     
     // Update stats
     statsEl.textContent =
@@ -199,7 +210,7 @@ applyCustomScaleBtn.addEventListener('click', () => {
 
 snapZoomBtn.addEventListener('click', () => {
   if (root) {
-    snapZoomToModel(root);
+    fitToScene(root);
   }
 });
 
@@ -236,25 +247,20 @@ function applyCustomScale(obj, targetSize = 8) {
 }
 
 // Snap zoom function for better initial view
-function snapZoomToModel(obj) {
+function fitToScene(obj) {
   const box = new THREE.Box3().setFromObject(obj);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
-  
-  // Calculate optimal camera distance
+  const sphere = box.getBoundingSphere(new THREE.Sphere());
   const fov = THREE.MathUtils.degToRad(camera.fov);
-  const maxDim = Math.max(size.x, size.y, size.z);
-  let dist = maxDim / (2 * Math.tan(fov / 2));
-  dist *= 1.2; // Slightly closer for better framing
-  
-  // Position camera for optimal view
-  camera.position.set(dist * 0.7, dist * 0.5, dist * 0.8);
-  controls.target.copy(center);
+  const dist = sphere.radius / Math.sin(fov / 2);
+  camera.position.set(
+    sphere.center.x + dist,
+    sphere.center.y + dist,
+    sphere.center.z + dist
+  );
+  controls.target.copy(sphere.center);
   controls.update();
-  
-  console.log(`Snap zoom applied - Camera distance: ${dist.toFixed(2)}m`);
+  const camDist = camera.position.distanceTo(sphere.center);
+  console.log(`Fit to scene - radius: ${sphere.radius.toFixed(2)}m, camera distance: ${camDist.toFixed(2)}m`);
 }
 
 function buildPickables(obj) {
@@ -286,8 +292,8 @@ function centerScaleAndFrame(obj) {
   // center to origin
   obj.position.sub(ct);
 
-  // Apply snap zoom for better initial view
-  snapZoomToModel(obj);
+  // Position camera to frame the object
+  fitToScene(obj);
 
   // Update camera near/far planes
   camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
@@ -302,7 +308,7 @@ function centerScaleAndFrame(obj) {
 }
 
 // ---------- Loaders ----------
-function onParsed(gltf) {
+function onLoaded(gltf) {
   try {
     if (root) {
       scene.remove(root);
@@ -315,48 +321,65 @@ function onParsed(gltf) {
     buildPickables(root);
 
     scene.add(root);
+
+    const box = new THREE.Box3().setFromObject(root);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    console.log(`Mesh added - bbox: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}m`);
+
     centerScaleAndFrame(root);
+    const center = box.getCenter(new THREE.Vector3());
+    const camDist = camera.position.distanceTo(center);
+    console.log(`Camera distance to center: ${camDist.toFixed(2)}m`);
   } catch (err) {
     console.error(err);
-    alert(`Model parsed but could not be displayed: ${err.message}`);
+    alert(`Model loaded but could not be displayed: ${err.message}`);
   }
 }
-
-function loadArrayBuffer(buf) {
-  try {
-    loader.parse(
-      buf, '', onParsed,
-      e => { console.error('GLB parse failed', e); alert('GLB parse failed (see console).'); }
-    );
-  } catch (err) {
-    console.error(err);
-    alert(`Unexpected parse error: ${err.message}`);
-  }
-}
-
-function fetchAndLoad(url) {
+async function loadURL(url) {
   statsEl.textContent = `Loading: ${url}`;
-  fetch(url)
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.arrayBuffer(); })
-    .then(loadArrayBuffer)
-    .catch(err => { console.error(err); alert(`Could not load ${url}\n${err.message}`); });
+  try {
+    const gltf = await loader.loadAsync(url);
+    onLoaded(gltf);
+  } catch (err) {
+    console.error(err);
+    alert(`Could not load ${url}\n${err.message}`);
+  }
 }
 
 // File input / Sample / Drag&Drop
-fileInput.addEventListener('change', e => {
+fileInput.addEventListener('change', async e => {
   const f = e.target.files?.[0];
   if (!f) return;
   statsEl.textContent = `Loading local file: ${f.name}`;
-  f.arrayBuffer().then(loadArrayBuffer).catch(err => { console.error(err); alert(`Read error: ${err.message}`); });
+  const url = URL.createObjectURL(f);
+  try {
+    const gltf = await loader.loadAsync(url);
+    onLoaded(gltf);
+  } catch (err) {
+    console.error(err);
+    alert(`Could not load model: ${err.message}`);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 });
 
-loadSample.addEventListener('click', () => fetchAndLoad('/examples/sample-room.glb'));
+loadSample.addEventListener('click', () => loadURL('/models/sample.glb'));
 
 container.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
-container.addEventListener('drop', e => {
+container.addEventListener('drop', async e => {
   e.preventDefault();
   const f = e.dataTransfer.files?.[0];
-  if (f) f.arrayBuffer().then(loadArrayBuffer);
+  if (!f) return;
+  const url = URL.createObjectURL(f);
+  try {
+    const gltf = await loader.loadAsync(url);
+    onLoaded(gltf);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 });
 
 // ---------- Measure Mode ----------
@@ -519,6 +542,14 @@ window.addEventListener('resize', () => {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
+
+  if (!glErrorLogged) {
+    const err = gl.getError();
+    if (err !== gl.NO_ERROR) {
+      console.error('WebGL error', err);
+      glErrorLogged = true;
+    }
+  }
 
   if (measureOn) {
     // only draw label if we have a finished segment

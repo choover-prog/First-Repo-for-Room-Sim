@@ -13,5 +13,6 @@ export interface Speaker {
 
 export interface Project {
   speakers: Speaker[];
+  mlp: Vec3 | null;
   selectedId: string | null;
 }

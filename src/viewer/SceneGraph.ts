@@ -1,10 +1,12 @@
 import * as THREE from 'three';
-import { projectStore } from '../state/projectStore.ts';
+import { projectStore } from '../state/projectStore';
 import { createSpeakerMesh, SpeakerMesh } from '../three/objects/SpeakerMesh';
+import { createMlpMesh } from '../three/objects/MlpMesh';
 
 export class SceneGraph {
   private scene: THREE.Scene;
   private meshes = new Map<string, SpeakerMesh>();
+  private mlp: THREE.Mesh | null = null;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -36,6 +38,18 @@ export class SceneGraph {
         mesh.rotation.y = sp.rotY;
       }
       mesh.setSelected(sp.id === project.selectedId);
+    }
+
+    if (project.mlp) {
+      if (!this.mlp) {
+        this.mlp = createMlpMesh(project.mlp);
+        this.scene.add(this.mlp);
+      } else {
+        this.mlp.position.set(project.mlp.x, project.mlp.y, project.mlp.z);
+      }
+    } else if (this.mlp) {
+      this.scene.remove(this.mlp);
+      this.mlp = null;
     }
   }
 }

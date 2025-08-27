@@ -13,10 +13,10 @@ import './state/ui.js';
 import { bindHotkeys } from './ui/Hotkeys.js';
 import { mountViewerHost } from './render/ViewerHost.js';
 import { mountSpeakerPanel } from './ui/SpeakerPanel.js';
-import { projectStore } from './state/projectStore.ts';
-import { SceneGraph } from './viewer/SceneGraph.ts';
-import { RaycastController } from './three/interaction/RaycastController.ts';
-import { DragController, snap } from './three/interaction/DragController.ts';
+import { projectStore } from './state/projectStore';
+import { SceneGraph } from './viewer/SceneGraph';
+import { RaycastController } from './three/interaction/RaycastController';
+import { DragController, snap } from './three/interaction/DragController';
 
 const mToFt = 3.28084;
 
@@ -129,12 +129,16 @@ const ray = new RaycastController(camera, renderer.domElement);
 new DragController(projectStore, ray, renderer.domElement);
 
 let placingModel = null;
+let placingMlp = false;
 let lastWorld = { x: 0, y: 0, z: 0 };
 ray.addEventListener('move', (e) => {
   lastWorld = e.detail.world;
 });
 window.addEventListener('ui:speaker:add', (e) => {
   placingModel = e.detail.model;
+});
+window.addEventListener('ui:mlp:add', () => {
+  placingMlp = true;
 });
 renderer.domElement.addEventListener('click', () => {
   if (placingModel) {
@@ -144,10 +148,19 @@ renderer.domElement.addEventListener('click', () => {
       pos: { x: snap(lastWorld.x, 0.0762), y: 0, z: snap(lastWorld.z, 0.0762) },
     });
     placingModel = null;
+  } else if (placingMlp) {
+    projectStore.getState().dispatch({
+      type: 'setMlp',
+      pos: { x: snap(lastWorld.x, 0.0762), y: 0, z: snap(lastWorld.z, 0.0762) },
+    });
+    placingMlp = false;
   }
 });
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') placingModel = null;
+  if (e.key === 'Escape') {
+    placingModel = null;
+    placingMlp = false;
+  }
 });
 
 // Initialize new systems

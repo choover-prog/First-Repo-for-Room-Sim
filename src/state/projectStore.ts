@@ -50,13 +50,15 @@ export type Command =
   | { type: 'addSpeaker'; model: string; pos?: Vec3; rotY?: number }
   | { type: 'selectSpeaker'; id: string | null }
   | { type: 'moveSpeaker'; id: string; pos: Vec3 }
-  | { type: 'deleteSpeaker'; id: string };
+  | { type: 'deleteSpeaker'; id: string }
+  | { type: 'setMlp'; pos: Vec3 }
+  | { type: 'deleteMlp' };
 
 const VERSION = '1';
 const DATA_KEY = 'project/current';
 const VER_KEY = 'project/version';
 
-const defaultProject: Project = { speakers: [], selectedId: null };
+const defaultProject: Project = { speakers: [], mlp: null, selectedId: null };
 
 function save(project: Project) {
   try {
@@ -86,6 +88,7 @@ function reduce(project: Project, cmd: Command): Project {
         rotY: cmd.rotY || 0,
       };
       return {
+        ...project,
         speakers: [...project.speakers, speaker],
         selectedId: id,
       };
@@ -102,7 +105,13 @@ function reduce(project: Project, cmd: Command): Project {
     case 'deleteSpeaker': {
       const speakers = project.speakers.filter((s) => s.id !== cmd.id);
       const selectedId = project.selectedId === cmd.id ? null : project.selectedId;
-      return { speakers, selectedId };
+      return { ...project, speakers, selectedId };
+    }
+    case 'setMlp': {
+      return { ...project, mlp: { ...cmd.pos } };
+    }
+    case 'deleteMlp': {
+      return { ...project, mlp: null };
     }
     default:
       return project;

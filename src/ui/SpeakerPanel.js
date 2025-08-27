@@ -1,4 +1,4 @@
-import { projectStore } from '../state/projectStore.ts';
+import { projectStore } from '../state/projectStore';
 
 const MODELS = ['Model A', 'Model B'];
 
@@ -14,6 +14,8 @@ export function mountSpeakerPanel(container) {
 
   const addBtn = document.createElement('button');
   addBtn.textContent = 'Add Speaker';
+  const addMlpBtn = document.createElement('button');
+  addMlpBtn.textContent = 'Add MLP';
   const delBtn = document.createElement('button');
   delBtn.textContent = 'Delete';
   const undoBtn = document.createElement('button');
@@ -22,13 +24,17 @@ export function mountSpeakerPanel(container) {
   redoBtn.textContent = 'Redo';
   const list = document.createElement('ul');
 
-  root.append(modelSel, addBtn, delBtn, undoBtn, redoBtn, list);
+  root.append(modelSel, addBtn, addMlpBtn, delBtn, undoBtn, redoBtn, list);
   container.appendChild(root);
 
   addBtn.onclick = () => {
     window.dispatchEvent(
       new CustomEvent('ui:speaker:add', { detail: { model: modelSel.value || MODELS[0] } })
     );
+  };
+
+  addMlpBtn.onclick = () => {
+    window.dispatchEvent(new CustomEvent('ui:mlp:add'));
   };
 
   delBtn.onclick = () => {

@@ -28,20 +28,16 @@ export function mountSpeakerPanel(container) {
   container.appendChild(root);
 
   addBtn.onclick = () => {
-    window.dispatchEvent(
-      new CustomEvent('ui:speaker:add', { detail: { model: modelSel.value || MODELS[0] } })
-    );
+    projectStore.getState().setMode('placingSpeaker', { model: modelSel.value || MODELS[0] });
   };
 
   addMlpBtn.onclick = () => {
-    window.dispatchEvent(new CustomEvent('ui:mlp:add'));
+    projectStore.getState().setMode('placingMLP');
   };
 
   delBtn.onclick = () => {
-    const { project, dispatch } = projectStore.getState();
-    if (project.selectedId) {
-      dispatch({ type: 'deleteSpeaker', id: project.selectedId });
-    }
+    const { project, delete: del } = projectStore.getState();
+    if (project.selectedId) del(project.selectedId);
   };
 
   undoBtn.onclick = () => projectStore.getState().undo();
@@ -54,10 +50,16 @@ export function mountSpeakerPanel(container) {
       const li = document.createElement('li');
       li.textContent = s.model;
       if (s.id === project.selectedId) li.style.fontWeight = 'bold';
-      li.onclick = () =>
-        projectStore.getState().dispatch({ type: 'selectSpeaker', id: s.id });
+      li.onclick = () => projectStore.getState().select(s.id);
       list.appendChild(li);
     });
+    if (project.mlp) {
+      const li = document.createElement('li');
+      li.textContent = 'MLP';
+      if (project.selectedId === 'mlp') li.style.fontWeight = 'bold';
+      li.onclick = () => projectStore.getState().select('mlp');
+      list.appendChild(li);
+    }
   }
 
   projectStore.subscribe(render);

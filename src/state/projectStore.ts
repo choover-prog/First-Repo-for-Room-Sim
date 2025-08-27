@@ -35,13 +35,22 @@ function genId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
+export type Mode = 'idle' | 'placingSpeaker' | 'placingMLP' | 'dragging';
+
 export interface ProjectState {
   project: Project;
+  mode: Mode;
+  placingModel: string | null;
   undoStack: Project[];
   redoStack: Project[];
   canUndo: boolean;
   canRedo: boolean;
-  dispatch: (cmd: Command) => void;
+  setMode: (mode: Mode, data?: { model?: string }) => void;
+  addSpeaker: (data: { model: string; pos: Vec3 }) => void;
+  addMLP: (data: { pos: Vec3 }) => void;
+  select: (id: string | null) => void;
+  move: (id: string, pos: Vec3) => void;
+  delete: (id: string) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -108,10 +117,11 @@ function reduce(project: Project, cmd: Command): Project {
       return { ...project, speakers, selectedId };
     }
     case 'setMlp': {
-      return { ...project, mlp: { ...cmd.pos } };
+      return { ...project, mlp: { ...cmd.pos }, selectedId: 'mlp' };
     }
     case 'deleteMlp': {
-      return { ...project, mlp: null };
+      const selectedId = project.selectedId === 'mlp' ? null : project.selectedId;
+      return { ...project, mlp: null, selectedId };
     }
     default:
       return project;
@@ -120,62 +130,82 @@ function reduce(project: Project, cmd: Command): Project {
 
 export function createProjectStore(initial?: Project): StoreApi<ProjectState> {
   const proj = initial || hydrate();
-  const store = createStore<ProjectState>((set, get) => ({
-    project: proj,
-    undoStack: [],
-    redoStack: [],
-    canUndo: false,
-    canRedo: false,
-    dispatch: (cmd: Command) => {
+  return createStore<ProjectState>((set, get) => {
+    const apply = (cmd: Command) => {
       set((state) => {
         const prev = state.project;
         const next = reduce(prev, cmd);
         const undoStack = [...state.undoStack, prev];
-        const newState = {
+        save(next);
+        return {
+          ...state,
           project: next,
           undoStack,
           redoStack: [],
           canUndo: undoStack.length > 0,
           canRedo: false,
         };
-        save(next);
-        return newState;
       });
-    },
-    undo: () => {
-      set((state) => {
-        if (state.undoStack.length === 0) return state;
-        const prev = state.undoStack[state.undoStack.length - 1];
-        const undoStack = state.undoStack.slice(0, -1);
-        const redoStack = [...state.redoStack, state.project];
-        save(prev);
-        return {
-          project: prev,
-          undoStack,
-          redoStack,
-          canUndo: undoStack.length > 0,
-          canRedo: true,
-        };
-      });
-    },
-    redo: () => {
-      set((state) => {
-        if (state.redoStack.length === 0) return state;
-        const next = state.redoStack[state.redoStack.length - 1];
-        const redoStack = state.redoStack.slice(0, -1);
-        const undoStack = [...state.undoStack, state.project];
-        save(next);
-        return {
-          project: next,
-          undoStack,
-          redoStack,
-          canUndo: true,
-          canRedo: redoStack.length > 0,
-        };
-      });
-    },
-  }));
-  return store;
+    };
+    return {
+      project: proj,
+      mode: 'idle',
+      placingModel: null,
+      undoStack: [],
+      redoStack: [],
+      canUndo: false,
+      canRedo: false,
+      setMode: (mode: Mode, data?: { model?: string }) => {
+        set((state) => ({
+          ...state,
+          mode,
+          placingModel: mode === 'placingSpeaker' ? data?.model || null : null,
+        }));
+      },
+      addSpeaker: ({ model, pos }) => apply({ type: 'addSpeaker', model, pos }),
+      addMLP: ({ pos }) => apply({ type: 'setMlp', pos }),
+      select: (id) => apply({ type: 'selectSpeaker', id }),
+      move: (id, pos) => apply({ type: 'moveSpeaker', id, pos }),
+      delete: (id) => {
+        if (id === 'mlp') apply({ type: 'deleteMlp' });
+        else apply({ type: 'deleteSpeaker', id });
+      },
+      undo: () => {
+        set((state) => {
+          if (state.undoStack.length === 0) return state;
+          const prev = state.undoStack[state.undoStack.length - 1];
+          const undoStack = state.undoStack.slice(0, -1);
+          const redoStack = [...state.redoStack, state.project];
+          save(prev);
+          return {
+            ...state,
+            project: prev,
+            undoStack,
+            redoStack,
+            canUndo: undoStack.length > 0,
+            canRedo: true,
+          };
+        });
+      },
+      redo: () => {
+        set((state) => {
+          if (state.redoStack.length === 0) return state;
+          const next = state.redoStack[state.redoStack.length - 1];
+          const redoStack = state.redoStack.slice(0, -1);
+          const undoStack = [...state.undoStack, state.project];
+          save(next);
+          return {
+            ...state,
+            project: next,
+            undoStack,
+            redoStack,
+            canUndo: true,
+            canRedo: redoStack.length > 0,
+          };
+        });
+      },
+    };
+  });
 }
 
 export const projectStore = createProjectStore();

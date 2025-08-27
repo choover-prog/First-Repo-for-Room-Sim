@@ -128,15 +128,18 @@ const sceneGraph = new SceneGraph(scene);
 const ray = new RaycastController(camera, renderer.domElement);
 new DragController(projectStore, ray, renderer.domElement);
 
-let placingModel = null;
-let placingMlp = false;
+// Mode label for debugging
+const modeEl = document.createElement('div');
+modeEl.style.cssText =
+  'position:absolute;top:8px;left:8px;padding:2px 6px;font-size:12px;background:#1b2330cc;border:1px solid #2a3446;border-radius:4px';
+container.appendChild(modeEl);
 
-window.addEventListener('ui:speaker:add', (e) => {
-  placingModel = e.detail.model;
+projectStore.subscribe(() => {
+  const { mode } = projectStore.getState();
+  modeEl.textContent = mode;
+  controls.enabled = mode === 'idle';
 });
-window.addEventListener('ui:mlp:add', () => {
-  placingMlp = true;
-});
+modeEl.textContent = projectStore.getState().mode;
 
 function worldFromEvent(ev) {
   const rect = renderer.domElement.getBoundingClientRect();
@@ -153,28 +156,25 @@ function worldFromEvent(ev) {
 }
 
 renderer.domElement.addEventListener('pointerdown', (ev) => {
-  if (!placingModel && !placingMlp) return;
+  const state = projectStore.getState();
+  if (state.mode !== 'placingSpeaker' && state.mode !== 'placingMLP') return;
   const world = worldFromEvent(ev);
-  if (placingModel) {
-    projectStore.getState().dispatch({
-      type: 'addSpeaker',
-      model: placingModel,
-      pos: { x: snap(world.x, 0.0762), y: 0, z: snap(world.z, 0.0762) },
-    });
-    placingModel = null;
-  } else if (placingMlp) {
-    projectStore.getState().dispatch({
-      type: 'setMlp',
-      pos: { x: snap(world.x, 0.0762), y: 0, z: snap(world.z, 0.0762) },
-    });
-    placingMlp = false;
+  if (state.mode === 'placingSpeaker') {
+    const p = { x: snap(world.x, 0.0762), y: 0, z: snap(world.z, 0.0762) };
+    state.addSpeaker({ model: state.placingModel || 'Generic', pos: p });
+    state.setMode('idle');
+    console.log('[Place]', 'speaker', '→', p.x.toFixed(3), p.z.toFixed(3));
+  } else if (state.mode === 'placingMLP') {
+    const p = { x: world.x, y: 0, z: world.z };
+    state.addMLP({ pos: p });
+    state.setMode('idle');
+    console.log('[Place]', 'mlp', '→', p.x.toFixed(3), p.z.toFixed(3));
   }
 });
 
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    placingModel = null;
-    placingMlp = false;
+    projectStore.getState().setMode('idle');
   }
 });
 

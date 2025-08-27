@@ -11,7 +11,7 @@ describe('projectStore', () => {
 
   it('adds and selects speaker', () => {
     const store = createProjectStore();
-    store.getState().dispatch({ type: 'addSpeaker', model: 'A', pos });
+    store.getState().addSpeaker({ model: 'A', pos });
     const state = store.getState();
     expect(state.project.speakers).toHaveLength(1);
     const id = state.project.speakers[0].id;
@@ -23,18 +23,18 @@ describe('projectStore', () => {
 
   it('moves speaker', () => {
     const store = createProjectStore();
-    store.getState().dispatch({ type: 'addSpeaker', model: 'A', pos });
+    store.getState().addSpeaker({ model: 'A', pos });
     const id = store.getState().project.selectedId!;
-    store.getState().dispatch({ type: 'moveSpeaker', id, pos: { x: 2, y: 0, z: 3 } });
+    store.getState().move(id, { x: 2, y: 0, z: 3 });
     const sp = store.getState().project.speakers[0];
     expect(sp.pos).toEqual({ x: 2, y: 0, z: 3 });
   });
 
   it('deletes speaker', () => {
     const store = createProjectStore();
-    store.getState().dispatch({ type: 'addSpeaker', model: 'A', pos });
+    store.getState().addSpeaker({ model: 'A', pos });
     const id = store.getState().project.selectedId!;
-    store.getState().dispatch({ type: 'deleteSpeaker', id });
+    store.getState().delete(id);
     expect(store.getState().project.speakers).toHaveLength(0);
     expect(store.getState().project.selectedId).toBeNull();
   });
@@ -42,12 +42,12 @@ describe('projectStore', () => {
   it('undo and redo', () => {
     const store = createProjectStore();
     // add two speakers
-    store.getState().dispatch({ type: 'addSpeaker', model: 'A', pos });
+    store.getState().addSpeaker({ model: 'A', pos });
     const id1 = store.getState().project.selectedId!;
-    store.getState().dispatch({ type: 'addSpeaker', model: 'B', pos });
+    store.getState().addSpeaker({ model: 'B', pos });
     const id2 = store.getState().project.selectedId!;
     // select first
-    store.getState().dispatch({ type: 'selectSpeaker', id: id1 });
+    store.getState().select(id1);
     expect(store.getState().project.selectedId).toBe(id1);
     // undo selection -> should select id2
     store.getState().undo();
@@ -66,9 +66,9 @@ describe('projectStore', () => {
 
   it('persists to localStorage', () => {
     const store = createProjectStore();
-    store.getState().dispatch({ type: 'addSpeaker', model: 'A', pos });
+    store.getState().addSpeaker({ model: 'A', pos });
     const id = store.getState().project.selectedId!;
-    store.getState().dispatch({ type: 'moveSpeaker', id, pos: { x: 4, y: 0, z: 5 } });
+    store.getState().move(id, { x: 4, y: 0, z: 5 });
     // create new store -> hydrate
     const store2 = createProjectStore();
     const sp = store2.getState().project.speakers[0];

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { projectStore } from '../state/projectStore';
 import { createSpeakerMesh, SpeakerMesh } from '../three/objects/SpeakerMesh';
-import { createMlpMesh } from '../three/objects/MlpMesh';
+import { createMlpMesh, MlpMesh } from '../three/objects/MlpMesh';
 
 export class SceneGraph {
   private scene: THREE.Scene;
   private meshes = new Map<string, SpeakerMesh>();
-  private mlp: THREE.Object3D | null = null;
+  private mlp: MlpMesh | null = null;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;
@@ -47,6 +47,7 @@ export class SceneGraph {
       } else {
         this.mlp.position.set(project.mlp.x, project.mlp.y, project.mlp.z);
       }
+      this.mlp.setSelected(project.selectedId === 'mlp');
     } else if (this.mlp) {
       this.scene.remove(this.mlp);
       this.mlp = null;

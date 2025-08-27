@@ -20,14 +20,18 @@ export class DragController {
   }
 
   private onDown = () => {
-    const { project } = this.store.getState();
-    if (project.selectedId) {
+    const { project, mode, setMode } = this.store.getState();
+    if (mode === 'idle' && project.selectedId) {
       this.dragging = true;
+      setMode('dragging');
     }
   };
 
   private onUp = () => {
-    this.dragging = false;
+    if (this.dragging) {
+      this.dragging = false;
+      this.store.getState().setMode('idle');
+    }
   };
 
   private onMove = (e: Event) => {
@@ -35,12 +39,12 @@ export class DragController {
     const detail = (e as CustomEvent).detail;
     if (!detail) return;
     const { world } = detail as { world: { x: number; y: number; z: number } };
-    const { project, dispatch } = this.store.getState();
+    const { project, move } = this.store.getState();
     if (!project.selectedId) return;
-    dispatch({
-      type: 'moveSpeaker',
-      id: project.selectedId,
-      pos: { x: snap(world.x, SNAP), y: 0, z: snap(world.z, SNAP) },
+    move(project.selectedId, {
+      x: snap(world.x, SNAP),
+      y: 0,
+      z: snap(world.z, SNAP),
     });
   };
 }

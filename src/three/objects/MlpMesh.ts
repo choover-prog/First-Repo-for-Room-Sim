@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import type { Vec3 } from '../../types/room';
 
+export type MlpMesh = THREE.Object3D & { setSelected: (sel: boolean) => void };
+
 // Create a simple marker for the main listening position (MLP).
 // A small sphere floats slightly above a floor ring so it stands out
 // against the grid and model geometry.
-export function createMlpMesh(pos: Vec3): THREE.Object3D {
-  const group = new THREE.Group();
+export function createMlpMesh(pos: Vec3): MlpMesh {
+  const group = new THREE.Group() as MlpMesh;
 
   // floor ring
   const ringGeo = new THREE.RingGeometry(0.18, 0.22, 32);
@@ -25,5 +27,10 @@ export function createMlpMesh(pos: Vec3): THREE.Object3D {
   group.add(sphere);
 
   group.position.set(pos.x, pos.y, pos.z);
+  group.setSelected = (sel: boolean) => {
+    const color = sel ? 0xffff00 : 0xff4080;
+    sphereMat.color.set(color);
+    ringMat.color.set(color);
+  };
   return group;
 }

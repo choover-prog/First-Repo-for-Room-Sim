@@ -301,29 +301,35 @@ function buildPickables(obj) {
   obj.traverse(o => { if (o.isMesh) pickables.push(o); });
 }
 
-function centerScaleAndFrame(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
-
-  // normalize to about 8m across longest axis
+function normalizeModel(root) {
+  // Compute bounds
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
   const longest = Math.max(size.x, size.y, size.z);
-  if (isFinite(longest) && longest > 0) {
-    const s = THREE.MathUtils.clamp(8 / longest, 0.001, 1000);
-    obj.scale.setScalar(s);
-  }
 
-  // re-evaluate after scale
-  const box2 = new THREE.Box3().setFromObject(obj);
+  // Heuristic scale: FBX often comes in cm (100x too large)
+  let scale = 1;
+  if (longest > 100)       scale = 0.01; // cm -> m
+  else if (longest < 0.5)  scale = 100;  // very tiny -> likely m -> cm mismatch
+
+  if (scale !== 1) root.scale.setScalar(scale);
+
+  // Recompute after scaling and drop onto y=0
+  const box2 = new THREE.Box3().setFromObject(root);
+  root.position.y -= box2.min.y;
+
+  // Recenter around origin in X/Z for easier camera framing
+  const center = box2.getCenter(new THREE.Vector3());
+  root.position.x -= center.x;
+  root.position.z -= center.z;
+}
+
+function centerScaleAndFrame(obj) {
+  normalizeModel(obj);
+
+  const box = new THREE.Box3().setFromObject(obj);
   const sz = new THREE.Vector3();
-  const ct = new THREE.Vector3();
-  box2.getSize(sz);
-  box2.getCenter(ct);
-
-  // center to origin
-  obj.position.sub(ct);
+  box.getSize(sz);
 
   // Fit camera to scene
   const camDist = fitToScene(obj);
@@ -333,7 +339,7 @@ function centerScaleAndFrame(obj) {
   camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
   camera.updateProjectionMatrix();
 
-  grid.position.y = box2.min.y;
+  grid.position.y = box.min.y;
 
   statsEl.textContent =
     `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +

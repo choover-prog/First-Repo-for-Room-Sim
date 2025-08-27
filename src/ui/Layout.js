@@ -34,6 +34,19 @@ export function mountLayout({ root }){
 
   root.append(left.panel, main.panel, dock.panel, right.panel);
 
+  // expand handles for collapsed panels
+  const expandLeft = document.createElement('button');
+  expandLeft.id = 'expand-left';
+  expandLeft.textContent = '▶';
+  const expandRight = document.createElement('button');
+  expandRight.id = 'expand-right';
+  expandRight.textContent = '◀';
+  const expandBottom = document.createElement('button');
+  expandBottom.id = 'expand-bottom';
+  expandBottom.textContent = '▴';
+  expandLeft.className = expandRight.className = expandBottom.className = 'expand-handle';
+  root.append(expandLeft, expandRight, expandBottom);
+
   // move existing containers if present
   const viewEl = document.getElementById('view');
   if(viewEl) main.body.appendChild(viewEl);
@@ -53,6 +66,16 @@ export function mountLayout({ root }){
     window.dispatchEvent(new CustomEvent('ui:fullscreen:set', { detail: { value: !getFullscreenState() } }));
   });
 
+  expandLeft.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'left', value:false } }));
+  });
+  expandRight.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'right', value:false } }));
+  });
+  expandBottom.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'bottom', value:false } }));
+  });
+
   window.addEventListener('ui:collapse:set', e => {
     const { zone, value } = e.detail;
     set(zone, value);
@@ -61,7 +84,17 @@ export function mountLayout({ root }){
     setFullscreenState(e.detail.value);
   });
 
+  function updateHandles(){
+    const fs = getFullscreenState();
+    expandLeft.style.display = get('left') && !fs ? 'block' : 'none';
+    expandRight.style.display = get('right') && !fs ? 'block' : 'none';
+    expandBottom.style.display = get('bottom') && !fs ? 'block' : 'none';
+  }
+
+  window.addEventListener('ui:change', updateHandles);
+
   applyCollapseStates();
+  updateHandles();
 
   return {
     root,

@@ -29,3 +29,18 @@
 .fullscreen #panel-left, .fullscreen #panel-right, .fullscreen #panel-dock { display:none !important; }
 .fullscreen { grid-template-columns: 1fr; grid-template-rows: 1fr; grid-template-areas: "main"; }
 .region-header { display:flex; align-items:center; justify-content:space-between; padding:6px 8px; }
+
+/* Expand handles shown when panels are collapsed */
+.expand-handle {
+  position:absolute;
+  z-index:10;
+  display:none;
+  background:#444;
+  color:#fff;
+  border:none;
+  padding:4px;
+  cursor:pointer;
+}
+#expand-left { left:0; top:50%; transform:translateY(-50%); }
+#expand-right { right:0; top:50%; transform:translateY(-50%); }
+#expand-bottom { left:50%; bottom:0; transform:translateX(-50%); }

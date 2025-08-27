@@ -22,7 +22,7 @@ const mToFt = 3.28084;
 
 // DOM
 const regions = mountLayout({ root: document.getElementById('app') });
-RoomState.init();
+const container = mountViewerHost(regions.main);
 regions.left.innerHTML = `
 <div id="ui">
   <h1>Viewer</h1>
@@ -51,7 +51,6 @@ regions.left.innerHTML = `
   </div>
 </div>
 `;
-const container = mountViewerHost(regions.main);
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
@@ -62,6 +61,8 @@ const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
 initHotkeys();
+// Initialize persistent room state (mirrors to localStorage)
+RoomState.init();
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');
@@ -157,6 +158,7 @@ scene.add(grid);
 
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
+// Render simple markers for room objects and MLP
 mountObjectGizmos(scene);
 
 // Initialize new systems

@@ -16,6 +16,12 @@
 #panel-right.is-collapsed { width:0; min-width:0; display:none; }
 #panel-dock.is-collapsed  { height:0; min-height:0; display:none; }
 
+/* Expand handles */
+.expand-handle { position:absolute; padding:4px; display:none; }
+#expand-left { top:8px; left:8px; }
+#expand-right { top:8px; right:8px; }
+#expand-bottom { bottom:8px; left:50%; transform:translateX(-50%); }
+
 /* Fullscreen focuses main */
 .fullscreen #panel-left, .fullscreen #panel-right, .fullscreen #panel-dock { display:none !important; }
 .fullscreen { grid-template-columns: 1fr; grid-template-rows: 1fr; grid-template-areas: "main"; }

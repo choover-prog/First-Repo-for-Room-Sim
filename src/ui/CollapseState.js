@@ -6,13 +6,24 @@ const zones = {
   bottom: () => document.getElementById('panel-dock')
 };
 
+const handles = {
+  left: () => document.getElementById('expand-left'),
+  right: () => document.getElementById('expand-right'),
+  bottom: () => document.getElementById('expand-bottom')
+};
+
 export function applyCollapseStates(){
   Object.entries(zones).forEach(([z,getEl]) => {
     const el = getEl();
     if (el) el.classList.toggle('is-collapsed', getCollapse(z));
   });
+  const full = getFullscreen();
   const app = document.getElementById('app');
-  if (app) app.classList.toggle('fullscreen', getFullscreen());
+  if (app) app.classList.toggle('fullscreen', full);
+  Object.entries(handles).forEach(([z, getHandle]) => {
+    const h = getHandle();
+    if (h) h.style.display = (!full && getCollapse(z)) ? 'block' : 'none';
+  });
 }
 
 export function toggle(zone){

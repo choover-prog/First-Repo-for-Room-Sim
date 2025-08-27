@@ -17,7 +17,25 @@ export function mountLayout({ root }) {
   });
   main.header.appendChild(fullBtn);
 
-  app.append(left.zone, main.zone, dock.zone, right.zone);
+  const expandLeft = document.createElement('button');
+  expandLeft.id = 'expand-left';
+  expandLeft.className = 'expand-handle';
+  expandLeft.textContent = '[◀]';
+  expandLeft.addEventListener('click', () => handleCollapse('left'));
+
+  const expandRight = document.createElement('button');
+  expandRight.id = 'expand-right';
+  expandRight.className = 'expand-handle';
+  expandRight.textContent = '[▶]';
+  expandRight.addEventListener('click', () => handleCollapse('right'));
+
+  const expandBottom = document.createElement('button');
+  expandBottom.id = 'expand-bottom';
+  expandBottom.className = 'expand-handle';
+  expandBottom.textContent = '[▴]';
+  expandBottom.addEventListener('click', () => handleCollapse('bottom'));
+
+  app.append(left.zone, main.zone, dock.zone, right.zone, expandLeft, expandRight, expandBottom);
 
   applyCollapseStates();
 

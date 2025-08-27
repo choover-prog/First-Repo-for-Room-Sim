@@ -5,7 +5,10 @@ Open `public/index.html` to test viewer.
 ## UI Scaffold & Zones
 
 The app now builds a four-region layout with navigation, viewer, controls dock, and shop panels.
-Sidebars and the bottom dock can collapse and persist their state to localStorage. When a panel is collapsed, edge handles appear so it can be re-opened without hotkeys. A fullscreen toggle hides all side panels and expands the viewer.
+
+- Sidebars and the bottom dock collapse with their state persisted to localStorage.
+- Edge handles appear when panels are collapsed so they can be restored without hotkeys.
+- A fullscreen toggle hides all side panels and expands the viewer.
 
 ## Room Object Manager
 

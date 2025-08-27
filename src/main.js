@@ -12,7 +12,7 @@ import { mountLayout } from './ui/Layout.js';
 import './state/ui.js';
 import { bindHotkeys } from './ui/Hotkeys.js';
 import { mountViewerHost } from './render/ViewerHost.js';
-import { mountSpeakerPanel } from './ui/LeftDock/SpeakerPanel.tsx';
+import { mountSpeakerPanel } from './ui/SpeakerPanel.js';
 
 const mToFt = 3.28084;
 

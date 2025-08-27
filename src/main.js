@@ -8,8 +8,63 @@ import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEna
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
+import { mountLayout } from './ui/Layout.js';
+import { bindHotkeys } from './ui/Hotkeys.js';
+import './state/ui.js';
+import { mountViewerHost } from './render/ViewerHost.js';
 
 const mToFt = 3.28084;
+
+const { regions } = mountLayout({ root: document.getElementById('app') });
+bindHotkeys();
+
+const view = document.createElement('div');
+view.id = 'view';
+regions.viewer.appendChild(view);
+const measureLabel = document.createElement('div');
+measureLabel.id = 'measureLabel';
+measureLabel.className = 'measure-label';
+measureLabel.style.display = 'none';
+measureLabel.textContent = '0.00 m';
+view.appendChild(measureLabel);
+
+const uiRoot = document.createElement('div');
+uiRoot.id = 'ui';
+uiRoot.innerHTML = `
+        <h1>Viewer</h1>
+        <div class="muted">Pick a .glb or use the sample.</div>
+
+        <div class="row">
+          <input type="file" id="file" accept=".glb,.gltf" />
+          <button id="loadSample">Load Sample</button>
+        </div>
+
+        <div class="row">
+          <label><input type="checkbox" id="gridT" checked /> Grid</label>
+          <label><input type="checkbox" id="axesT" checked /> Axes</label>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <button id="measureBtn" class="tog">Measure</button>
+          <select id="units">
+            <option value="m">Meters</option>
+            <option value="ft">Feet</option>
+          </select>
+          <button id="clearMeasure">Clear</button>
+        </div>
+
+        <div id="stats" class="muted"></div>
+        <div class="tips">
+          Tip: drag & drop a GLB anywhere in the left panel.<br/>
+          Esc = cancel/clear current measurement.
+        </div>
+`;
+regions.dock.appendChild(uiRoot);
+
+mountEquipmentPanel(regions.right);
+mountOnboarding(document.body);
 
 // DOM
 const container   = document.getElementById('view');
@@ -60,15 +115,13 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
-mountOnboarding(document.body);
 
 // Renderer / Scene / Camera
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(devicePixelRatio);
 renderer.setSize(container.clientWidth, container.clientHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-container.appendChild(renderer.domElement);
+mountViewerHost(container, renderer.domElement);
 const gl = renderer.getContext();
 let glErrorLogged = false;
 

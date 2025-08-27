@@ -1,82 +1,74 @@
-import { isCollapsed, setCollapsed, isFullscreen, setFullscreen } from '../state/ui.js';
+import { applyCollapseStates, get, set, getFullscreenState, setFullscreenState } from './CollapseState.js';
+
+function makePanel(tag, id, zone, title, btnLabel){
+  const panel = document.createElement(tag);
+  panel.id = id;
+  panel.dataset.zone = zone;
+
+  const header = document.createElement('div');
+  header.className = 'region-header';
+  const titleSpan = document.createElement('span');
+  titleSpan.textContent = title;
+  header.appendChild(titleSpan);
+  let btn = null;
+  if(btnLabel){
+    btn = document.createElement('button');
+    btn.textContent = btnLabel;
+    header.appendChild(btn);
+  }
+  const body = document.createElement('div');
+  panel.append(header, body);
+  return { panel, header, body, btn };
+}
 
 export function mountLayout({ root }){
-  const app = document.createElement('div');
-  app.id = 'layout';
-  app.style.cssText = 'position:fixed;inset:0;display:grid;grid-template-columns:240px 1fr 280px;';
+  const left = makePanel('aside', 'panel-left', 'nav', 'Navigation', '▶');
+  const main = makePanel('main', 'panel-main', 'viewer', 'Viewer');
+  const dock = makePanel('section', 'panel-dock', 'controls', 'Controls', '▾');
+  const right = makePanel('aside', 'panel-right', 'shop', 'Equipment', '◀');
 
-  const style = document.createElement('style');
-  style.textContent = `
-    #layout .zone{display:flex;flex-direction:column;}
-    #layout .zone-header{background:#1a1f29;padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
-    #layout .zone-body{flex:1;overflow:auto;}
-    #layout .viewer{position:relative;flex:1;}
-    #layout .dock{height:160px;}
-    #layout.fullscreen{grid-template-columns:0 1fr 0;}
-  `;
-  document.head.append(style);
+  const fsBtn = document.createElement('button');
+  fsBtn.textContent = '⛶';
+  main.header.appendChild(fsBtn);
 
-  const left = makeZone('Navigation');
-  const viewerWrap = document.createElement('div');
-  viewerWrap.className = 'viewer';
-  const dock = makeZone('Controls');
-  dock.zone.classList.add('dock');
-  const right = makeZone('Equipment');
+  root.append(left.panel, main.panel, dock.panel, right.panel);
 
-  const center = document.createElement('div');
-  center.style.cssText = 'display:flex;flex-direction:column;';
-  center.append(viewerWrap, dock.zone);
+  // move existing containers if present
+  const viewEl = document.getElementById('view');
+  if(viewEl) main.body.appendChild(viewEl);
+  const uiEl = document.getElementById('ui');
+  if(uiEl) dock.body.appendChild(uiEl);
 
-  app.append(left.zone, center, right.zone);
-  root.append(app);
+  left.btn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'left', value: !get('left') } }));
+  });
+  right.btn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'right', value: !get('right') } }));
+  });
+  dock.btn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'bottom', value: !get('bottom') } }));
+  });
+  fsBtn.addEventListener('click', () => {
+    window.dispatchEvent(new CustomEvent('ui:fullscreen:set', { detail: { value: !getFullscreenState() } }));
+  });
 
-  // restore collapse states
-  applyCollapse(left.zone, 'left');
-  applyCollapse(right.zone, 'right');
-  applyCollapse(dock.zone, 'bottom');
-  if (isFullscreen()) {
-    app.classList.add('fullscreen');
-  }
+  window.addEventListener('ui:collapse:set', e => {
+    const { zone, value } = e.detail;
+    set(zone, value);
+  });
+  window.addEventListener('ui:fullscreen:set', e => {
+    setFullscreenState(e.detail.value);
+  });
 
-  // header buttons
-  left.btn.onclick = () => toggleCollapse(left.zone, 'left');
-  right.btn.onclick = () => toggleCollapse(right.zone, 'right');
-  dock.btn.onclick = () => toggleCollapse(dock.zone, 'bottom');
+  applyCollapseStates();
 
-  const fullBtn = document.createElement('button');
-  fullBtn.textContent = 'Fullscreen';
-  fullBtn.onclick = () => {
-    const f = !isFullscreen();
-    setFullscreen(f);
-    app.classList.toggle('fullscreen', f);
+  return {
+    root,
+    regions: {
+      left: left.body,
+      viewer: main.body,
+      dock: dock.body,
+      right: right.body
+    }
   };
-  viewerWrap.append(fullBtn);
-
-  return { root: app, regions: { left: left.body, viewer: viewerWrap, dock: dock.body, right: right.body } };
-}
-
-function makeZone(title){
-  const zone = document.createElement('div');
-  zone.className = 'zone';
-  const header = document.createElement('div');
-  header.className = 'zone-header';
-  header.textContent = title;
-  const btn = document.createElement('button');
-  btn.textContent = 'Collapse';
-  header.append(btn);
-  const body = document.createElement('div');
-  body.className = 'zone-body';
-  zone.append(header, body);
-  return { zone, header, body, btn };
-}
-
-function applyCollapse(el, zone){
-  if (isCollapsed(zone)) {
-    el.style.display = 'none';
-  }
-}
-function toggleCollapse(el, zone){
-  const collapsed = el.style.display === 'none';
-  el.style.display = collapsed ? '' : 'none';
-  setCollapsed(zone, !collapsed);
 }

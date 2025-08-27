@@ -8,8 +8,17 @@ import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEna
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
+import { mountLayout } from './ui/Layout.js';
+import './state/ui.js';
+import { bindHotkeys } from './ui/Hotkeys.js';
+import { mountViewerHost } from './render/ViewerHost.js';
 
 const mToFt = 3.28084;
+
+const { regions } = mountLayout({ root: document.getElementById('app') });
+bindHotkeys();
+mountViewerHost(regions.viewer);
+mountEquipmentPanel(regions.right);
 
 // DOM
 const container   = document.getElementById('view');
@@ -60,7 +69,6 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
 
 // Renderer / Scene / Camera

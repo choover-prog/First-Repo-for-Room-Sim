@@ -1,6 +1,39 @@
-import { createStore, StoreApi } from 'zustand/vanilla';
-import { v4 as uuidv4 } from 'uuid';
 import type { Project, Speaker, Vec3 } from '../types/room';
+
+// Minimal store implementation to avoid external deps (zustand)
+export interface StoreApi<S> {
+  getState: () => S;
+  setState: (partial: S | ((state: S) => S)) => void;
+  subscribe: (listener: (state: S) => void) => () => void;
+}
+
+function createStore<S>(
+  initializer: (
+    set: (partial: S | ((state: S) => S)) => void,
+    get: () => S
+  ) => S
+): StoreApi<S> {
+  let state: S;
+  const listeners = new Set<(s: S) => void>();
+  const setState = (partial: S | ((state: S) => S)) => {
+    state = typeof partial === 'function' ? (partial as any)(state) : partial;
+    listeners.forEach((l) => l(state));
+  };
+  const getState = () => state;
+  state = initializer(setState, getState);
+  return {
+    getState,
+    setState,
+    subscribe(listener: (state: S) => void) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+function genId(): string {
+  return Math.random().toString(36).slice(2, 10);
+}
 
 export interface ProjectState {
   project: Project;
@@ -45,7 +78,7 @@ function hydrate(): Project {
 function reduce(project: Project, cmd: Command): Project {
   switch (cmd.type) {
     case 'addSpeaker': {
-      const id = uuidv4();
+      const id = genId();
       const speaker: Speaker = {
         id,
         model: cmd.model,

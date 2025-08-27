@@ -1,5 +1,4 @@
-import type { StoreApi } from 'zustand/vanilla';
-import type { ProjectState } from '../../state/projectStore';
+import type { StoreApi, ProjectState } from '../../state/projectStore.ts';
 import { RaycastController } from './RaycastController';
 
 const SNAP = 0.0762; // 0.25 ft in meters

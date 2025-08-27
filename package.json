@@ -10,9 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "three": "^0.155.0",
-    "uuid": "^9.0.0",
-    "zustand": "^4.5.0"
+    "three": "^0.155.0"
   },
   "devDependencies": {
     "vite": "^5.2.0",

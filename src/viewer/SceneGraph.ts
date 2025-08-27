@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { projectStore } from '../state/projectStore';
+import { projectStore } from '../state/projectStore.ts';
 import { createSpeakerMesh, SpeakerMesh } from '../three/objects/SpeakerMesh';
 
 export class SceneGraph {

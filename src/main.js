@@ -8,6 +8,8 @@ import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEna
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
+import { mountSettingsPanel, getNormalizePref } from './ui/SettingsPanel.js';
+import { normalizeAndFrame } from './three/utils/normalizeModel.js';
 
 const mToFt = 3.28084;
 
@@ -60,7 +62,9 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
+const leftDock = document.getElementById('ui');
+mountEquipmentPanel(leftDock);
+mountSettingsPanel({ rootEl: leftDock });
 mountOnboarding(document.body);
 
 // Renderer / Scene / Camera
@@ -301,55 +305,6 @@ function buildPickables(obj) {
   obj.traverse(o => { if (o.isMesh) pickables.push(o); });
 }
 
-function normalizeModel(root) {
-  // Compute bounds
-  const box = new THREE.Box3().setFromObject(root);
-  const size = box.getSize(new THREE.Vector3());
-  const longest = Math.max(size.x, size.y, size.z);
-
-  // Heuristic scale: FBX often comes in cm (100x too large)
-  let scale = 1;
-  if (longest > 100)       scale = 0.01; // cm -> m
-  else if (longest < 0.5)  scale = 100;  // very tiny -> likely m -> cm mismatch
-
-  if (scale !== 1) root.scale.setScalar(scale);
-
-  // Recompute after scaling and drop onto y=0
-  const box2 = new THREE.Box3().setFromObject(root);
-  root.position.y -= box2.min.y;
-
-  // Recenter around origin in X/Z for easier camera framing
-  const center = box2.getCenter(new THREE.Vector3());
-  root.position.x -= center.x;
-  root.position.z -= center.z;
-}
-
-function centerScaleAndFrame(obj) {
-  normalizeModel(obj);
-
-  const box = new THREE.Box3().setFromObject(obj);
-  const sz = new THREE.Vector3();
-  box.getSize(sz);
-
-  // Fit camera to scene
-  const camDist = fitToScene(obj);
-
-  // Update camera near/far planes
-  camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
-  camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
-  camera.updateProjectionMatrix();
-
-  grid.position.y = box.min.y;
-
-  statsEl.textContent =
-    `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
-    `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
-
-  console.log(
-    `Mesh bbox: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m | camDist: ${camDist.toFixed(2)}m`
-  );
-}
-
 // ---------- Loaders ----------
 function onParsed(gltf) {
   try {
@@ -365,7 +320,17 @@ function onParsed(gltf) {
 
     scene.add(root);
     console.log('Added mesh to scene');
-    centerScaleAndFrame(root);
+    if (getNormalizePref()) {
+      normalizeAndFrame(root, { dropToY: 0, recenterXZ: true, targetLongest: 20 }, { camera, controls, grid, statsEl });
+    } else {
+      fitToScene(root);
+      const box = new THREE.Box3().setFromObject(root);
+      const sz = box.getSize(new THREE.Vector3());
+      grid.position.y = box.min.y;
+      statsEl.textContent =
+        `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
+        `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+    }
   } catch (err) {
     console.error(err);
     alert(`Model parsed but could not be displayed: ${err.message}`);

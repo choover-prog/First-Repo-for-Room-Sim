@@ -9,7 +9,7 @@ import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { mountSettingsPanel, getNormalizePref } from './ui/SettingsPanel.js';
-import { normalizeAndFrame } from './three/utils/normalizeModel.js';
+import { normalizeAndFrame, computeSceneBox } from './three/utils/normalizeModel.js';
 
 const mToFt = 3.28084;
 
@@ -287,7 +287,7 @@ function snapZoomToModel(obj) {
 }
 
 function fitToScene(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
+  const box = computeSceneBox(obj);
   const sphere = box.getBoundingSphere(new THREE.Sphere());
   const dist = sphere.radius / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   camera.position.set(
@@ -324,7 +324,7 @@ function onParsed(gltf) {
       normalizeAndFrame(root, { dropToY: 0, recenterXZ: true, targetLongest: 20 }, { camera, controls, grid, statsEl });
     } else {
       fitToScene(root);
-      const box = new THREE.Box3().setFromObject(root);
+      const box = computeSceneBox(root);
       const sz = box.getSize(new THREE.Vector3());
       grid.position.y = box.min.y;
       statsEl.textContent =

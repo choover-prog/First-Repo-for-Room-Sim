@@ -1,5 +1,40 @@
 import * as THREE from 'three';
 
+// Compute a bounding box for a scene while heuristically ignoring
+// gigantic near-flat meshes often used as ground planes.
+export function computeSceneBox(root) {
+  const box = new THREE.Box3();
+  const childBox = new THREE.Box3();
+  const size = new THREE.Vector3();
+  let first = true;
+
+  root.traverse(obj => {
+    if (!obj.isMesh) return;
+    childBox.setFromObject(obj);
+    childBox.getSize(size);
+
+    const area = size.x * size.z;
+    const flat = size.y < 0.05; // near-flat
+    const huge = area > 1000;   // very large in X/Z
+    const below = childBox.min.y < -0.5; // noticeably below origin
+    if (flat && huge && below) return; // ignore ground plane
+
+    if (first) {
+      box.copy(childBox);
+      first = false;
+    } else {
+      box.union(childBox);
+    }
+  });
+
+  if (first) {
+    // Fallback in case no meshes were found
+    box.setFromObject(root);
+  }
+
+  return box;
+}
+
 // Heuristically normalize a model's scale and frame it in view.
 // opts: { dropToY=0, recenterXZ=true, targetLongest=20 }
 // ctx:  { camera, controls, grid, statsEl }
@@ -10,7 +45,7 @@ export function normalizeAndFrame(root, opts = {}, ctx = {}) {
   const mToFt = 3.28084;
 
   // Initial bounds
-  const box = new THREE.Box3().setFromObject(root);
+  const box = computeSceneBox(root);
   const size = box.getSize(new THREE.Vector3());
   const longest = Math.max(size.x, size.y, size.z);
 
@@ -26,7 +61,7 @@ export function normalizeAndFrame(root, opts = {}, ctx = {}) {
   if (scale !== 1) root.scale.setScalar(scale);
 
   // Recompute after scaling
-  const box2 = new THREE.Box3().setFromObject(root);
+  const box2 = computeSceneBox(root);
   const center = box2.getCenter(new THREE.Vector3());
   if (recenterXZ) {
     root.position.x -= center.x;
@@ -35,7 +70,7 @@ export function normalizeAndFrame(root, opts = {}, ctx = {}) {
   root.position.y += dropToY - box2.min.y;
 
   // Final bounds
-  const box3 = new THREE.Box3().setFromObject(root);
+  const box3 = computeSceneBox(root);
   const sz = box3.getSize(new THREE.Vector3());
   const sphere = box3.getBoundingSphere(new THREE.Sphere());
   const dist = sphere.radius / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);

@@ -13,6 +13,10 @@ import './state/ui.js';
 import { bindHotkeys } from './ui/Hotkeys.js';
 import { mountViewerHost } from './render/ViewerHost.js';
 import { mountSpeakerPanel } from './ui/SpeakerPanel.js';
+import { projectStore } from './state/projectStore.ts';
+import { SceneGraph } from './viewer/SceneGraph.ts';
+import { RaycastController } from './three/interaction/RaycastController.ts';
+import { DragController, snap } from './three/interaction/DragController.ts';
 
 const mToFt = 3.28084;
 
@@ -28,7 +32,7 @@ const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
 const fileInput   = document.getElementById('file');
-const loadSample  = document.getElementById('loadSample');
+const loadSample  = document.getElementById('btnLoadSample');
 const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
@@ -93,14 +97,23 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(4, 2, 6);
 
+function resize() {
+  const w = container.clientWidth;
+  const h = container.clientHeight;
+  if (w && h) {
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+}
+window.addEventListener('resize', resize);
+resize();
+
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // Lights
-scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.9));
-const dir = new THREE.DirectionalLight(0xffffff, 0.7);
-dir.position.set(6, 8, 5);
-scene.add(dir);
+ensureDefaultLights(scene);
 
 // Helpers
 const grid = new THREE.GridHelper(20, 20, 0x335577, 0x223344);
@@ -110,6 +123,32 @@ scene.add(grid);
 
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
+
+const sceneGraph = new SceneGraph(scene);
+const ray = new RaycastController(camera, renderer.domElement);
+new DragController(projectStore, ray, renderer.domElement);
+
+let placingModel = null;
+let lastWorld = { x: 0, y: 0, z: 0 };
+ray.addEventListener('move', (e) => {
+  lastWorld = e.detail.world;
+});
+window.addEventListener('ui:speaker:add', (e) => {
+  placingModel = e.detail.model;
+});
+renderer.domElement.addEventListener('click', () => {
+  if (placingModel) {
+    projectStore.getState().dispatch({
+      type: 'addSpeaker',
+      model: placingModel,
+      pos: { x: snap(lastWorld.x, 0.0762), y: 0, z: snap(lastWorld.z, 0.0762) },
+    });
+    placingModel = null;
+  }
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') placingModel = null;
+});
 
 // Initialize new systems
 let lfHeatmap = null;
@@ -292,6 +331,48 @@ function buildPickables(obj) {
   obj.traverse(o => { if (o.isMesh) pickables.push(o); });
 }
 
+function ensureDefaultLights(scene) {
+  if (scene.getObjectByName('DefaultLights')) return;
+  const g = new THREE.Group();
+  g.name = 'DefaultLights';
+  g.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.8));
+  const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+  dir.position.set(5, 10, 7);
+  g.add(dir);
+  scene.add(g);
+}
+
+function logBounds(root) {
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  console.log(
+    `Mesh added - bbox: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}m, minY=${box.min.y.toFixed(3)} maxY=${box.max.y.toFixed(3)}`
+  );
+}
+
+function dropToFloor(root) {
+  const box = new THREE.Box3().setFromObject(root);
+  root.position.y -= box.min.y;
+}
+
+function postLoadPositioning(model) {
+  ensureDefaultLights(scene);
+  logBounds(model);
+  const normalize = localStorage.getItem('ui.normalizeImport') !== 'false';
+  if (normalize) {
+    centerScaleAndFrame(model);
+  } else {
+    dropToFloor(model);
+    fitToScene(model);
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    statsEl.textContent =
+      `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+      `${(size.x * mToFt).toFixed(2)}×${(size.y * mToFt).toFixed(2)}×${(size.z * mToFt).toFixed(2)} ft`;
+    grid.position.y = 0;
+  }
+}
+
 function centerScaleAndFrame(obj) {
   const box = new THREE.Box3().setFromObject(obj);
   const size = new THREE.Vector3();
@@ -313,8 +394,10 @@ function centerScaleAndFrame(obj) {
   box2.getSize(sz);
   box2.getCenter(ct);
 
-  // center to origin
-  obj.position.sub(ct);
+  // center XZ and drop to floor
+  obj.position.x -= ct.x;
+  obj.position.y -= box2.min.y;
+  obj.position.z -= ct.z;
 
   // Position camera to frame the object
   fitToScene(obj);
@@ -324,7 +407,7 @@ function centerScaleAndFrame(obj) {
   camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
   camera.updateProjectionMatrix();
 
-  grid.position.y = box2.min.y;
+  grid.position.y = 0;
 
   statsEl.textContent =
     `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
@@ -343,18 +426,8 @@ function onLoaded(gltf) {
 
     prepMaterialsAndHideCube(root);
     buildPickables(root);
-
     scene.add(root);
-
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    console.log(`Mesh added - bbox: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)}m`);
-
-    centerScaleAndFrame(root);
-    const center = box.getCenter(new THREE.Vector3());
-    const camDist = camera.position.distanceTo(center);
-    console.log(`Camera distance to center: ${camDist.toFixed(2)}m`);
+    postLoadPositioning(root);
   } catch (err) {
     console.error(err);
     alert(`Model loaded but could not be displayed: ${err.message}`);
@@ -388,7 +461,7 @@ fileInput.addEventListener('change', async e => {
   }
 });
 
-loadSample.addEventListener('click', () => loadURL('/models/sample.glb'));
+loadSample?.addEventListener('click', () => loadURL('/models/sample.glb'));
 
 container.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
 container.addEventListener('drop', async e => {

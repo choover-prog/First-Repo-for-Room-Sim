@@ -8,6 +8,8 @@ import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEna
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
+import { mountSettingsPanel, getNormalizePref } from './ui/SettingsPanel.js';
+import { normalizeAndFrame, computeSceneBox } from './three/utils/normalizeModel.js';
 
 const mToFt = 3.28084;
 
@@ -60,7 +62,9 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
+const leftDock = document.getElementById('ui');
+mountEquipmentPanel(leftDock);
+mountSettingsPanel({ rootEl: leftDock });
 mountOnboarding(document.body);
 
 // Renderer / Scene / Camera
@@ -283,7 +287,7 @@ function snapZoomToModel(obj) {
 }
 
 function fitToScene(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
+  const box = computeSceneBox(obj);
   const sphere = box.getBoundingSphere(new THREE.Sphere());
   const dist = sphere.radius / Math.tan(THREE.MathUtils.degToRad(camera.fov) / 2);
   camera.position.set(
@@ -301,49 +305,6 @@ function buildPickables(obj) {
   obj.traverse(o => { if (o.isMesh) pickables.push(o); });
 }
 
-function centerScaleAndFrame(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
-
-  // normalize to about 8m across longest axis
-  const longest = Math.max(size.x, size.y, size.z);
-  if (isFinite(longest) && longest > 0) {
-    const s = THREE.MathUtils.clamp(8 / longest, 0.001, 1000);
-    obj.scale.setScalar(s);
-  }
-
-  // re-evaluate after scale
-  const box2 = new THREE.Box3().setFromObject(obj);
-  const sz = new THREE.Vector3();
-  const ct = new THREE.Vector3();
-  box2.getSize(sz);
-  box2.getCenter(ct);
-
-  // center to origin
-  obj.position.sub(ct);
-
-  // Fit camera to scene
-  const camDist = fitToScene(obj);
-
-  // Update camera near/far planes
-  camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
-  camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
-  camera.updateProjectionMatrix();
-
-  grid.position.y = box2.min.y;
-
-  statsEl.textContent =
-    `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
-    `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
-
-  console.log(
-    `Mesh bbox: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m | camDist: ${camDist.toFixed(2)}m`
-  );
-}
-
 // ---------- Loaders ----------
 function onParsed(gltf) {
   try {
@@ -359,7 +320,17 @@ function onParsed(gltf) {
 
     scene.add(root);
     console.log('Added mesh to scene');
-    centerScaleAndFrame(root);
+    if (getNormalizePref()) {
+      normalizeAndFrame(root, { dropToY: 0, recenterXZ: true, targetLongest: 20 }, { camera, controls, grid, statsEl });
+    } else {
+      fitToScene(root);
+      const box = computeSceneBox(root);
+      const sz = box.getSize(new THREE.Vector3());
+      grid.position.y = box.min.y;
+      statsEl.textContent =
+        `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
+        `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+    }
   } catch (err) {
     console.error(err);
     alert(`Model parsed but could not be displayed: ${err.message}`);

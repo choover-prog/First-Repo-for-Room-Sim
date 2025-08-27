@@ -12,6 +12,7 @@ import { mountLayout } from './ui/Layout.js';
 import './state/ui.js';
 import { bindHotkeys } from './ui/Hotkeys.js';
 import { mountViewerHost } from './render/ViewerHost.js';
+import { mountSpeakerPanel } from './ui/LeftDock/SpeakerPanel.tsx';
 
 const mToFt = 3.28084;
 
@@ -19,6 +20,7 @@ const { regions } = mountLayout({ root: document.getElementById('app') });
 bindHotkeys();
 mountViewerHost(regions.viewer);
 mountEquipmentPanel(regions.right);
+mountSpeakerPanel(regions.dock);
 
 // DOM
 const container   = document.getElementById('view');

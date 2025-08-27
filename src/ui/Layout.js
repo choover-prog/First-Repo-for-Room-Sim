@@ -17,6 +17,7 @@ function makePanel(tag, id, zone, title, btnLabel){
     header.appendChild(btn);
   }
   const body = document.createElement('div');
+  body.className = 'region-body';
   panel.append(header, body);
   return { panel, header, body, btn };
 }
@@ -37,7 +38,7 @@ export function mountLayout({ root }){
   const viewEl = document.getElementById('view');
   if(viewEl) main.body.appendChild(viewEl);
   const uiEl = document.getElementById('ui');
-  if(uiEl) dock.body.appendChild(uiEl);
+  if(uiEl) left.body.appendChild(uiEl);
 
   left.btn.addEventListener('click', () => {
     window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone:'left', value: !get('left') } }));

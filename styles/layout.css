@@ -11,6 +11,15 @@
 #panel-dock  { grid-area:dock;  overflow:auto; }
 #panel-right { grid-area:right; overflow:auto; }
 
+#panel-left, #panel-main, #panel-dock, #panel-right {
+  display:flex;
+  flex-direction:column;
+}
+
+.region-body { flex:1; }
+
+#panel-main .region-body { position:relative; }
+
 /* Collapsed states */
 #panel-left.is-collapsed  { width:0; min-width:0; display:none; }
 #panel-right.is-collapsed { width:0; min-width:0; display:none; }

@@ -10,11 +10,44 @@ import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapDat
 import { BadgeManager } from './ui/Badges.js';
 import { mountSettingsPanel, getNormalizePref } from './ui/SettingsPanel.js';
 import { normalizeAndFrame, computeSceneBox } from './three/utils/normalizeModel.js';
+import { mountLayout } from './ui/Layout.js';
+import { mountViewerHost } from './render/ViewerHost.js';
+import { initHotkeys } from './ui/Hotkeys.js';
+import './state/ui.js';
 
 const mToFt = 3.28084;
 
 // DOM
-const container   = document.getElementById('view');
+const regions = mountLayout({ root: document.getElementById('app') });
+regions.left.innerHTML = `
+<div id="ui">
+  <h1>Viewer</h1>
+  <div class="muted">Pick a .glb or use the sample.</div>
+  <div class="row">
+    <input type="file" id="file" accept=".glb,.gltf" />
+    <button id="loadSample">Load Sample</button>
+  </div>
+  <div class="row">
+    <label><input type="checkbox" id="gridT" checked /> Grid</label>
+    <label><input type="checkbox" id="axesT" checked /> Axes</label>
+  </div>
+  <div class="sep"></div>
+  <div class="row">
+    <button id="measureBtn" class="tog">Measure</button>
+    <select id="units">
+      <option value="m">Meters</option>
+      <option value="ft">Feet</option>
+    </select>
+    <button id="clearMeasure">Clear</button>
+  </div>
+  <div id="stats" class="muted"></div>
+  <div class="tips">
+    Tip: drag & drop a GLB anywhere in the left panel.<br/>
+    Esc = cancel/clear current measurement.
+  </div>
+</div>
+`;
+const container = mountViewerHost(regions.main);
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
@@ -24,6 +57,7 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+initHotkeys();
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');

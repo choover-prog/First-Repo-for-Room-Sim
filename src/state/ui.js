@@ -1,21 +1,30 @@
 const PREFIX = 'ui.';
 const collapseKey = zone => `${PREFIX}collapse.${zone}`;
 const fullKey = `${PREFIX}fullscreen`;
-export function isCollapsed(zone){
+
+function dispatch(key, value){
+  window.dispatchEvent(new CustomEvent('ui:change',{detail:{key,value}}));
+}
+
+export function getCollapse(zone){
   return localStorage.getItem(collapseKey(zone)) === '1';
 }
-export function setCollapsed(zone,val){
+export function setCollapse(zone,val){
   localStorage.setItem(collapseKey(zone), val ? '1':'0');
+  dispatch(`collapse.${zone}`, val);
 }
-export function isFullscreen(){
+
+export function getFullscreen(){
   return localStorage.getItem(fullKey) === '1';
 }
 export function setFullscreen(val){
   localStorage.setItem(fullKey, val ? '1':'0');
+  dispatch('fullscreen', val);
 }
+
 export default {
-  isCollapsed,
-  setCollapsed,
-  isFullscreen,
+  getCollapse,
+  setCollapse,
+  getFullscreen,
   setFullscreen
 };

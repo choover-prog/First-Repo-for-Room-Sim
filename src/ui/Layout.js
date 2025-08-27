@@ -43,6 +43,8 @@ function makePanel(tag, id, zone, btnLabel, onCollapse){
   const el = document.createElement(tag);
   el.id = id;
   el.dataset.zone = zone;
+  el.style.display = 'flex';
+  el.style.flexDirection = 'column';
 
   const header = document.createElement('div');
   header.className = 'region-header';
@@ -53,6 +55,8 @@ function makePanel(tag, id, zone, btnLabel, onCollapse){
     header.appendChild(btn);
   }
   const body = document.createElement('div');
+  body.style.flex = '1';
+  body.style.overflow = id === 'panel-main' ? 'hidden' : 'auto';
   el.appendChild(header);
   el.appendChild(body);
   return { zone: el, header, body };

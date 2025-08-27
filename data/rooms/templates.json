@@ -1,0 +1,27 @@
+{
+  "small_living_2_1": {
+    "room": {"L":3.66,"W":4.57,"H":2.44,"origin":[0,0,0],"up":"Y","scale_m":1.0},
+    "objects": [
+      {"id":"spk_L","type":"speaker","role":"L","transform":{"pos":[-0.8,1.0,-1.3],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_R","type":"speaker","role":"R","transform":{"pos":[0.8,1.0,-1.3],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"sub1","type":"sub","role":"SUB1","transform":{"pos":[0.0,0.4,-1.8],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"}
+    ],
+    "mlp":{"pos":[0.0,1.0,1.0],"yaw":0.0},
+    "meta":{"pipeline":"template","ts":0}
+  },
+  "theater_5_1_2": {
+    "room":{"L":4.27,"W":6.10,"H":2.74,"origin":[0,0,0],"up":"Y","scale_m":1.0},
+    "objects":[
+      {"id":"spk_L","type":"speaker","role":"L","transform":{"pos":[-1.5,1.0,-2.0],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_R","type":"speaker","role":"R","transform":{"pos":[1.5,1.0,-2.0],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_C","type":"speaker","role":"C","transform":{"pos":[0,1.0,-2.1],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_SL","type":"speaker","role":"SL","transform":{"pos":[-2.0,1.0,0.5],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_SR","type":"speaker","role":"SR","transform":{"pos":[2.0,1.0,0.5],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_TFL","type":"speaker","role":"TFL","transform":{"pos":[-1.2,2.2,-1.0],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"spk_TFR","type":"speaker","role":"TFR","transform":{"pos":[1.2,2.2,-1.0],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"},
+      {"id":"sub1","type":"sub","role":"SUB1","transform":{"pos":[0.0,0.4,-2.5],"rot_euler":[0,0,0],"scale":[1,1,1]},"source":"template.v1"}
+    ],
+    "mlp":{"pos":[0.0,1.0,1.5],"yaw":0.0},
+    "meta":{"pipeline":"template","ts":0}
+  }
+}

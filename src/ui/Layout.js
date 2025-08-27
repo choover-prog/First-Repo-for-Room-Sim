@@ -1,82 +1,81 @@
-import { isCollapsed, setCollapsed, isFullscreen, setFullscreen } from '../state/ui.js';
+import { applyCollapseStates, toggle, toggleFullscreen } from './CollapseState.js';
 
-export function mountLayout({ root }){
-  const app = document.createElement('div');
-  app.id = 'layout';
-  app.style.cssText = 'position:fixed;inset:0;display:grid;grid-template-columns:240px 1fr 280px;';
+export function mountLayout({ root }) {
+  const app = root;
 
-  const style = document.createElement('style');
-  style.textContent = `
-    #layout .zone{display:flex;flex-direction:column;}
-    #layout .zone-header{background:#1a1f29;padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
-    #layout .zone-body{flex:1;overflow:auto;}
-    #layout .viewer{position:relative;flex:1;}
-    #layout .dock{height:160px;}
-    #layout.fullscreen{grid-template-columns:0 1fr 0;}
-  `;
-  document.head.append(style);
-
-  const left = makeZone('Navigation');
-  const viewerWrap = document.createElement('div');
-  viewerWrap.className = 'viewer';
-  const dock = makeZone('Controls');
-  dock.zone.classList.add('dock');
-  const right = makeZone('Equipment');
-
-  const center = document.createElement('div');
-  center.style.cssText = 'display:flex;flex-direction:column;';
-  center.append(viewerWrap, dock.zone);
-
-  app.append(left.zone, center, right.zone);
-  root.append(app);
-
-  // restore collapse states
-  applyCollapse(left.zone, 'left');
-  applyCollapse(right.zone, 'right');
-  applyCollapse(dock.zone, 'bottom');
-  if (isFullscreen()) {
-    app.classList.add('fullscreen');
-  }
-
-  // header buttons
-  left.btn.onclick = () => toggleCollapse(left.zone, 'left');
-  right.btn.onclick = () => toggleCollapse(right.zone, 'right');
-  dock.btn.onclick = () => toggleCollapse(dock.zone, 'bottom');
+  const left = makePanel('aside', 'panel-left', 'nav', '[▶]', () => handleCollapse('left'));
+  const main = makePanel('main', 'panel-main', 'viewer', '', null);
+  const dock = makePanel('section', 'panel-dock', 'controls', '[▾]', () => handleCollapse('bottom'));
+  const right = makePanel('aside', 'panel-right', 'shop', '[◀]', () => handleCollapse('right'));
 
   const fullBtn = document.createElement('button');
-  fullBtn.textContent = 'Fullscreen';
-  fullBtn.onclick = () => {
-    const f = !isFullscreen();
-    setFullscreen(f);
-    app.classList.toggle('fullscreen', f);
+  fullBtn.textContent = '[⛶]';
+  fullBtn.addEventListener('click', () => {
+    toggleFullscreen();
+    const val = document.getElementById('app').classList.contains('fullscreen');
+    window.dispatchEvent(new CustomEvent('ui:fullscreen:set', { detail: { value: val } }));
+  });
+  main.header.appendChild(fullBtn);
+
+  const expandLeft = document.createElement('button');
+  expandLeft.id = 'expand-left';
+  expandLeft.className = 'expand-handle';
+  expandLeft.textContent = '[◀]';
+  expandLeft.addEventListener('click', () => handleCollapse('left'));
+
+  const expandRight = document.createElement('button');
+  expandRight.id = 'expand-right';
+  expandRight.className = 'expand-handle';
+  expandRight.textContent = '[▶]';
+  expandRight.addEventListener('click', () => handleCollapse('right'));
+
+  const expandBottom = document.createElement('button');
+  expandBottom.id = 'expand-bottom';
+  expandBottom.className = 'expand-handle';
+  expandBottom.textContent = '[▴]';
+  expandBottom.addEventListener('click', () => handleCollapse('bottom'));
+
+  app.append(left.zone, main.zone, dock.zone, right.zone, expandLeft, expandRight, expandBottom);
+
+  applyCollapseStates();
+
+  return {
+    left: left.body,
+    main: main.body,
+    dock: dock.body,
+    right: right.body
   };
-  viewerWrap.append(fullBtn);
 
-  return { root: app, regions: { left: left.body, viewer: viewerWrap, dock: dock.body, right: right.body } };
-}
-
-function makeZone(title){
-  const zone = document.createElement('div');
-  zone.className = 'zone';
-  const header = document.createElement('div');
-  header.className = 'zone-header';
-  header.textContent = title;
-  const btn = document.createElement('button');
-  btn.textContent = 'Collapse';
-  header.append(btn);
-  const body = document.createElement('div');
-  body.className = 'zone-body';
-  zone.append(header, body);
-  return { zone, header, body, btn };
-}
-
-function applyCollapse(el, zone){
-  if (isCollapsed(zone)) {
-    el.style.display = 'none';
+  function handleCollapse(zone){
+    toggle(zone);
+    const val = zone === 'bottom'
+      ? document.getElementById('panel-dock').classList.contains('is-collapsed')
+      : zone === 'left'
+        ? document.getElementById('panel-left').classList.contains('is-collapsed')
+        : document.getElementById('panel-right').classList.contains('is-collapsed');
+    window.dispatchEvent(new CustomEvent('ui:collapse:set', { detail: { zone, value: val } }));
   }
 }
-function toggleCollapse(el, zone){
-  const collapsed = el.style.display === 'none';
-  el.style.display = collapsed ? '' : 'none';
-  setCollapsed(zone, !collapsed);
+
+function makePanel(tag, id, zone, btnLabel, onCollapse){
+  const el = document.createElement(tag);
+  el.id = id;
+  el.dataset.zone = zone;
+  el.style.display = 'flex';
+  el.style.flexDirection = 'column';
+
+  const header = document.createElement('div');
+  header.className = 'region-header';
+  if (onCollapse){
+    const btn = document.createElement('button');
+    btn.textContent = btnLabel;
+    btn.addEventListener('click', onCollapse);
+    header.appendChild(btn);
+  }
+  const body = document.createElement('div');
+  body.style.flex = '1';
+  body.style.overflow = id === 'panel-main' ? 'hidden' : 'auto';
+  el.appendChild(header);
+  el.appendChild(body);
+  return { zone: el, header, body };
 }

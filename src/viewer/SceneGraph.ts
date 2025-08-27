@@ -6,7 +6,7 @@ import { createMlpMesh } from '../three/objects/MlpMesh';
 export class SceneGraph {
   private scene: THREE.Scene;
   private meshes = new Map<string, SpeakerMesh>();
-  private mlp: THREE.Mesh | null = null;
+  private mlp: THREE.Object3D | null = null;
 
   constructor(scene: THREE.Scene) {
     this.scene = scene;

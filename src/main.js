@@ -132,93 +132,107 @@ gridToggle.onchange = e => (grid.visible = e.target.checked);
 axesToggle.onchange = e => (axes.visible = e.target.checked);
 
 // Room dimensions
-updateDimensionsBtn.addEventListener('click', () => {
-  const length = parseFloat(roomLengthInput.value);
-  const width = parseFloat(roomWidthInput.value);
-  const height = parseFloat(roomHeightInput.value);
-  
-  if (length > 0 && width > 0 && height > 0) {
-    lfHeatmap.updateDimensions(length, width, height);
-    console.log(`Updated room dimensions: ${length}×${width}×${height} ft`);
-  }
-});
+if (updateDimensionsBtn && roomLengthInput && roomWidthInput && roomHeightInput) {
+  updateDimensionsBtn.addEventListener('click', () => {
+    const length = parseFloat(roomLengthInput.value);
+    const width = parseFloat(roomWidthInput.value);
+    const height = parseFloat(roomHeightInput.value);
+
+    if (length > 0 && width > 0 && height > 0) {
+      lfHeatmap.updateDimensions(length, width, height);
+      console.log(`Updated room dimensions: ${length}×${width}×${height} ft`);
+    }
+  });
+}
 
 // Heatmap toggle
-heatmapToggle.addEventListener('change', (e) => {
-  if (e.target.checked) {
-    lfHeatmap.show();
-  } else {
-    lfHeatmap.hide();
-  }
-});
+if (heatmapToggle) {
+  heatmapToggle.addEventListener('change', (e) => {
+    if (e.target.checked) {
+      lfHeatmap.show();
+    } else {
+      lfHeatmap.hide();
+    }
+  });
+}
 
 // Export functionality
-exportPNGBtn.addEventListener('click', async () => {
-  try {
-    const canvas = renderer.domElement;
-    const blob = await captureCanvasPNG(canvas, 'room-screenshot.png');
-    downloadBlobURL(blob, 'room-screenshot.png');
-  } catch (error) {
-    console.error('Export PNG failed:', error);
-    alert('Failed to export PNG. See console for details.');
-  }
-});
+if (exportPNGBtn) {
+  exportPNGBtn.addEventListener('click', async () => {
+    try {
+      const canvas = renderer.domElement;
+      const blob = await captureCanvasPNG(canvas, 'room-screenshot.png');
+      downloadBlobURL(blob, 'room-screenshot.png');
+    } catch (error) {
+      console.error('Export PNG failed:', error);
+      alert('Failed to export PNG. See console for details.');
+    }
+  });
+}
 
-exportJSONBtn.addEventListener('click', () => {
-  try {
-    const roomData = {
-      length: parseFloat(roomLengthInput.value),
-      width: parseFloat(roomWidthInput.value),
-      height: parseFloat(roomHeightInput.value)
-    };
-    
-    const heatmapData = lfHeatmap.getState();
-    const equipment = {}; // TODO: Add equipment data
-    
-    const report = generateRoomReport(roomData, heatmapData, measurements, equipment);
-    const jsonString = JSON.stringify(report, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    downloadBlobURL(blob, 'room-report.json');
-  } catch (error) {
-    console.error('Export JSON failed:', error);
-    alert('Failed to export JSON. See console for details.');
-  }
-});
+if (exportJSONBtn && roomLengthInput && roomWidthInput && roomHeightInput) {
+  exportJSONBtn.addEventListener('click', () => {
+    try {
+      const roomData = {
+        length: parseFloat(roomLengthInput.value),
+        width: parseFloat(roomWidthInput.value),
+        height: parseFloat(roomHeightInput.value)
+      };
+
+      const heatmapData = lfHeatmap.getState();
+      const equipment = {}; // TODO: Add equipment data
+
+      const report = generateRoomReport(roomData, heatmapData, measurements, equipment);
+      const jsonString = JSON.stringify(report, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      downloadBlobURL(blob, 'room-report.json');
+    } catch (error) {
+      console.error('Export JSON failed:', error);
+      alert('Failed to export JSON. See console for details.');
+    }
+  });
+}
 
 // Custom scaling
-applyCustomScaleBtn.addEventListener('click', () => {
-  if (root) {
-    const targetSize = parseFloat(targetSizeInput.value);
-    applyCustomScale(root, targetSize);
-    
-    // Re-center and update view
-    const box = new THREE.Box3().setFromObject(root);
-    const size = new THREE.Vector3();
-    const center = new THREE.Vector3();
-    box.getSize(size);
-    box.getCenter(center);
-    
-    root.position.sub(center);
-    fitToScene(root);
-    
-    // Update stats
-    statsEl.textContent =
-      `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
-      `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
-  }
-});
+if (applyCustomScaleBtn && targetSizeInput) {
+  applyCustomScaleBtn.addEventListener('click', () => {
+    if (root) {
+      const targetSize = parseFloat(targetSizeInput.value);
+      applyCustomScale(root, targetSize);
 
-snapZoomBtn.addEventListener('click', () => {
-  if (root) {
-    fitToScene(root);
-  }
-});
+      // Re-center and update view
+      const box = new THREE.Box3().setFromObject(root);
+      const size = new THREE.Vector3();
+      const center = new THREE.Vector3();
+      box.getSize(size);
+      box.getCenter(center);
 
-resetViewBtn.addEventListener('click', () => {
-  camera.position.set(4, 2, 6);
-  controls.target.set(0, 0, 0);
-  controls.update();
-});
+      root.position.sub(center);
+      fitToScene(root);
+
+      // Update stats
+      statsEl.textContent =
+        `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+        `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+    }
+  });
+}
+
+if (snapZoomBtn) {
+  snapZoomBtn.addEventListener('click', () => {
+    if (root) {
+      fitToScene(root);
+    }
+  });
+}
+
+if (resetViewBtn) {
+  resetViewBtn.addEventListener('click', () => {
+    camera.position.set(4, 2, 6);
+    controls.target.set(0, 0, 0);
+    controls.update();
+  });
+}
 
 // ---------- Model prep / framing ----------
 function prepMaterialsAndHideCube(obj) {

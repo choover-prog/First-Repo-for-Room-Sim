@@ -130,32 +130,47 @@ new DragController(projectStore, ray, renderer.domElement);
 
 let placingModel = null;
 let placingMlp = false;
-let lastWorld = { x: 0, y: 0, z: 0 };
-ray.addEventListener('move', (e) => {
-  lastWorld = e.detail.world;
-});
+
 window.addEventListener('ui:speaker:add', (e) => {
   placingModel = e.detail.model;
 });
 window.addEventListener('ui:mlp:add', () => {
   placingMlp = true;
 });
-renderer.domElement.addEventListener('click', () => {
+
+function worldFromEvent(ev) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const ndc = new THREE.Vector2(
+    ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+    -((ev.clientY - rect.top) / rect.height) * 2 + 1
+  );
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(ndc, camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const hit = new THREE.Vector3();
+  raycaster.ray.intersectPlane(plane, hit);
+  return { x: hit.x, y: 0, z: hit.z };
+}
+
+renderer.domElement.addEventListener('pointerdown', (ev) => {
+  if (!placingModel && !placingMlp) return;
+  const world = worldFromEvent(ev);
   if (placingModel) {
     projectStore.getState().dispatch({
       type: 'addSpeaker',
       model: placingModel,
-      pos: { x: snap(lastWorld.x, 0.0762), y: 0, z: snap(lastWorld.z, 0.0762) },
+      pos: { x: snap(world.x, 0.0762), y: 0, z: snap(world.z, 0.0762) },
     });
     placingModel = null;
   } else if (placingMlp) {
     projectStore.getState().dispatch({
       type: 'setMlp',
-      pos: { x: snap(lastWorld.x, 0.0762), y: 0, z: snap(lastWorld.z, 0.0762) },
+      pos: { x: snap(world.x, 0.0762), y: 0, z: snap(world.z, 0.0762) },
     });
     placingMlp = false;
   }
 });
+
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     placingModel = null;

@@ -89,8 +89,11 @@ export function mountEquipmentPanel() {
     const conf = confidenceFromQuality(q);
     const shownPref = blendScore(rawPref, conf);
 
+    const spinBadge = spData.spinorama && spData.spinorama.freq_hz && spData.spinorama.freq_hz.length
+      ? '<span style="margin-left:4px;padding:2px 6px;border-radius:6px;background:#22b8cf;color:#0b0d10;font-size:10px">spin✓</span>'
+      : '';
     stats.innerHTML = `
-      Speaker: <b>${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
+      Speaker: <b>${spData.brand} ${spData.model}</b>${spinBadge} (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
       Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
       Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
       Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>

@@ -16,7 +16,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const KEY_H = 'ui.bottomH';
   const KEY_BC = 'ui.bottomCollapsed';
-  const KEY_FS = 'ui.fullscreen';
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
@@ -31,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize height if not fullscreen/collapsed
   const initCollapsed = localStorage.getItem(KEY_BC) === 'true';
-  const initFS = localStorage.getItem(KEY_FS) === 'true';
+  const initFS = document.fullscreenElement || app.classList.contains('is-fullscreen');
   if (!initCollapsed && !initFS) {
     setBottomH(getBottomH());
   }
@@ -42,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function onDown(e) {
     const collapsed = bottom.classList.contains('is-collapsed') || localStorage.getItem(KEY_BC) === 'true';
-    const fs = app.classList.contains('is-fullscreen') || localStorage.getItem(KEY_FS) === 'true';
+    const fs = app.classList.contains('is-fullscreen') || document.fullscreenElement;
     if (collapsed || fs) return;
 
     dragging = true;
@@ -99,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const mo = new MutationObserver(() => {
     const collapsed = bottom.classList.contains('is-collapsed') || localStorage.getItem(KEY_BC) === 'true';
-    const fs = app.classList.contains('is-fullscreen') || localStorage.getItem(KEY_FS) === 'true';
+    const fs = app.classList.contains('is-fullscreen') || document.fullscreenElement;
     if (collapsed || fs) {
       // seam hidden
     } else {

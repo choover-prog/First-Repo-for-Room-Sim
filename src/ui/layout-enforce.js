@@ -91,14 +91,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const toolbar = document.querySelector('[data-role="viewer-toolbar"], .viewer-toolbar, #viewerToolbar');
   if (toolbar && bottomBody) bottomBody.appendChild(toolbar);
 
-  // State persistence (left/bottom/right collapse + fullscreen)
-  const KEY_L='ui.leftCollapsed', KEY_B='ui.bottomCollapsed', KEY_R='ui.rightCollapsed', KEY_F='ui.fullscreen';
+  // State persistence (left/bottom/right collapse)
+  const KEY_L='ui.leftCollapsed', KEY_B='ui.bottomCollapsed', KEY_R='ui.rightCollapsed';
   const KEY_LW='ui.leftWidth', KEY_RW='ui.rightWidth';
   const state = {
     leftCollapsed:   localStorage.getItem(KEY_L) === 'true',
     bottomCollapsed: localStorage.getItem(KEY_B) === 'true',
     rightCollapsed:  localStorage.getItem(KEY_R) === 'true',
-    fullscreen:      localStorage.getItem(KEY_F) === 'true',
   };
   const storedLW = parseInt(localStorage.getItem(KEY_LW),10);
   const storedRW = parseInt(localStorage.getItem(KEY_RW),10);
@@ -108,13 +107,11 @@ document.addEventListener('DOMContentLoaded', () => {
     left.classList.toggle('is-collapsed',   state.leftCollapsed);
     bottom.classList.toggle('is-collapsed', state.bottomCollapsed);
     right.classList.toggle('is-collapsed',  state.rightCollapsed);
-    app.classList.toggle('is-fullscreen',   state.fullscreen);
   };
   const save = ()=>{
     localStorage.setItem(KEY_L, String(state.leftCollapsed));
     localStorage.setItem(KEY_B, String(state.bottomCollapsed));
     localStorage.setItem(KEY_R, String(state.rightCollapsed));
-    localStorage.setItem(KEY_F, String(state.fullscreen));
   };
   apply();
 
@@ -127,8 +124,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const m = { panelLeft:'leftCollapsed', panelBottom:'bottomCollapsed', panelRight:'rightCollapsed' }[id];
     if (m) { state[m] = !state[m]; apply(); save(); }
   });
-  const btnFS = document.getElementById('btnFullscreen');
-  btnFS && btnFS.addEventListener('click', ()=>{ state.fullscreen = !state.fullscreen; apply(); save(); });
 
   // Resizable panels
   function makeResizable(panel, side) {

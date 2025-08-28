@@ -9,6 +9,7 @@ import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEna
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
+import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 
 const mToFt = 3.28084;
 
@@ -23,6 +24,23 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+const app         = document.getElementById('app');
+const btnFullscreen = document.getElementById('btnFullscreen');
+installFullscreenGuard(app);
+btnFullscreen?.addEventListener('click', async () => {
+  if (!document.fullscreenElement) {
+    try {
+      await app.requestFullscreen?.();
+      app.classList.add('is-fullscreen');
+      document.body.classList.add('is-fullscreen');
+      localStorage.setItem('ui.fullscreen', 'true');
+    } catch (e) {
+      console.warn('Failed to enter fullscreen', e);
+    }
+  } else {
+    window.exitFS?.();
+  }
+});
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');

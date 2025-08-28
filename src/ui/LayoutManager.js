@@ -52,6 +52,22 @@ const LayoutManager = (() => {
     pane.collapsed = bool;
     const el = pane.el;
     el.classList.toggle('is-collapsed', bool);
+    const isSide = id === 'left' || id === 'right';
+    const sizeProp = isSide ? 'width' : 'height';
+    const collapsedSize = isSide ? '16px' : id === 'bottom' ? '18px' : '22px';
+    if (bool) {
+      if (!el.dataset.prevSize) {
+        const cur = el.style[sizeProp] || `${isSide ? el.offsetWidth : el.offsetHeight}px`;
+        el.dataset.prevSize = cur;
+      }
+      el.style[sizeProp] = collapsedSize;
+    } else {
+      const prev = el.dataset.prevSize;
+      if (prev) {
+        el.style[sizeProp] = prev;
+        delete el.dataset.prevSize;
+      }
+    }
     const body = el.querySelector('.pane-body');
     if (body) {
       if (bool) body.setAttribute('aria-hidden', 'true');

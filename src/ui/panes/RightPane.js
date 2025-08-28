@@ -2,7 +2,7 @@ import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js
 
 export function mount(el) {
   if (!el) return;
-  initPane('paneRight', el, 'right');
+  const content = initPane(el, 'right');
   const sec = mountSection();
   sec.append(
     makeDropdown('selSpeakerModel', ['Speaker A', 'Speaker B']),
@@ -19,5 +19,5 @@ export function mount(el) {
     badges.appendChild(s);
   });
   sec.appendChild(badges);
-  el.appendChild(sec);
+  content.appendChild(sec);
 }

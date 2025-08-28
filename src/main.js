@@ -15,8 +15,39 @@ import { mount as mountTopPane } from './ui/panes/TopPane.js';
 import { mount as mountLeftPane } from './ui/panes/LeftPane.js';
 import { mount as mountRightPane } from './ui/panes/RightPane.js';
 import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
-import { getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
+import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
+
+function enforceFourPanes() {
+  const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
+  const seen = new Set();
+  document.querySelectorAll('.pane').forEach((node) => {
+    const id = node.id;
+    if (!ids.includes(id)) {
+      console.warn('[UI] Removing unexpected pane:', id);
+      node.remove();
+      return;
+    }
+    if (seen.has(id)) {
+      console.warn('[UI] Duplicate pane, removing:', id);
+      node.remove();
+    } else {
+      seen.add(id);
+    }
+  });
+  ids.forEach((id) => {
+    if (!document.getElementById(id)) {
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = `pane ${id.replace('pane', '').toLowerCase()}`;
+      document.getElementById('uiHost')?.appendChild(div);
+      console.info('[UI] Recreated missing pane:', id);
+    }
+  });
+}
+enforceFourPanes();
+const panes = document.querySelectorAll('.pane');
+if (panes.length !== 4) console.warn('[UI] Expected 4 panes, found', panes.length);
 
 const mToFt = 3.28084;
 
@@ -53,6 +84,73 @@ mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
 mountBottomPane(document.getElementById('paneBottom'));
+
+function savePane(side, partial) {
+  const state = getPaneState();
+  state[side] = { ...(state[side] || {}), ...partial };
+  setPaneState(state);
+}
+
+function applyPaneState(state) {
+  ['top', 'left', 'right', 'bottom'].forEach((side) => {
+    const el = document.getElementById('pane' + side.charAt(0).toUpperCase() + side.slice(1));
+    if (!el) return;
+    const s = state[side] || { open: true };
+    el.classList.toggle('collapsed', s.open === false);
+    if (s.size) {
+      if (side === 'left' || side === 'right') el.style.width = s.size + 'px';
+      else el.style.height = s.size + 'px';
+    }
+  });
+}
+
+function togglePane(paneId) {
+  const side = paneId.replace('pane', '').toLowerCase();
+  const el = document.getElementById(paneId);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  savePane(side, { open: !collapsed });
+}
+
+function resetLayout() {
+  const defaults = {
+    top:    { open: true, size: 48 },
+    left:   { open: true, size: 280 },
+    right:  { open: true, size: 320 },
+    bottom: { open: true, size: 56 }
+  };
+  setPaneState(defaults);
+  applyPaneState(defaults);
+  console.info('[UI] Layout reset');
+}
+
+applyPaneState(getPaneState());
+
+['Top', 'Left', 'Right', 'Bottom'].forEach((side) => {
+  const paneId = 'pane' + side;
+  document.getElementById(`btnCollapse${side}`)?.addEventListener('click', () => togglePane(paneId));
+  const paneEl = document.getElementById(paneId);
+  paneEl?.addEventListener('click', (e) => {
+    if (!paneEl.classList.contains('collapsed')) return;
+    if (e.target === paneEl || e.target.classList.contains('rail-label')) {
+      togglePane(paneId);
+    }
+  });
+});
+
+document.getElementById('btnResetLayout')?.addEventListener('click', resetLayout);
+
+document.addEventListener('keydown', (e) => {
+  if (e.shiftKey && !e.ctrlKey && !e.altKey) {
+    const map = { T: 'paneTop', L: 'paneLeft', R: 'paneRight', B: 'paneBottom' };
+    const k = e.key.toUpperCase();
+    if (map[k]) { e.preventDefault(); togglePane(map[k]); }
+  }
+  if (e.ctrlKey && e.altKey && e.key === '0') {
+    e.preventDefault();
+    resetLayout();
+  }
+});
 
 const roomFileInput = document.getElementById('roomFile');
 const btnImportRoom = document.getElementById('btnImportRoom');

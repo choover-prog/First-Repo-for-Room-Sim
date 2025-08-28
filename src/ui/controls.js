@@ -52,23 +52,25 @@ export function mountSection(title) {
   return div;
 }
 
-export function initPane(id, el, side) {
-  const state = getPaneState(id);
-  if (state.collapsed) el.classList.add('collapsed');
-  if (state.size) {
-    if (state.size.width) el.style.width = state.size.width + 'px';
-    if (state.size.height) el.style.height = state.size.height + 'px';
-  }
+export function initPane(el, side) {
+  const label = side.charAt(0).toUpperCase() + side.slice(1);
+
+  const content = document.createElement('div');
+  content.className = 'content';
+  el.appendChild(content);
+
   const toggle = document.createElement('button');
-  toggle.className = 'pane-toggle';
+  toggle.id = `btnCollapse${label}`;
+  toggle.className = 'collapse-toggle';
   toggle.textContent = '▾';
   toggle.title = 'Collapse';
   toggle.setAttribute('aria-label', 'Collapse');
-  toggle.addEventListener('click', () => {
-    el.classList.toggle('collapsed');
-    save();
-  });
   el.appendChild(toggle);
+
+  const rail = document.createElement('div');
+  rail.className = 'rail-label';
+  rail.textContent = label;
+  el.appendChild(rail);
 
   const handle = document.createElement('div');
   handle.className = 'handle';
@@ -98,16 +100,18 @@ export function initPane(id, el, side) {
     function onUp() {
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
-      save();
+      saveSize();
     }
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   });
 
-  function save() {
-    setPaneState(id, {
-      collapsed: el.classList.contains('collapsed'),
-      size: { width: el.offsetWidth, height: el.offsetHeight }
-    });
+  function saveSize() {
+    const state = getPaneState();
+    const size = side === 'left' || side === 'right' ? el.offsetWidth : el.offsetHeight;
+    state[side] = { ...(state[side] || {}), size };
+    setPaneState(state);
   }
+
+  return content;
 }

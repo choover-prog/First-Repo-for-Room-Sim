@@ -13,7 +13,7 @@ function number(id) {
 
 export function mount(el) {
   if (!el) return;
-  initPane('paneLeft', el, 'left');
+  const content = initPane(el, 'left');
   const sec = mountSection();
   sec.append(
     makeToggle('tglLFHeatmap', 'LF Heatmap'),
@@ -24,5 +24,5 @@ export function mount(el) {
     makeToggle('tglMicLayout', 'Mic Layout'),
     makeToggle('tglSeatMarker', 'Seat Marker')
   );
-  el.appendChild(sec);
+  content.appendChild(sec);
 }

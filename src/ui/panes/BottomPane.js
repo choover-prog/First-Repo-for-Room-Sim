@@ -2,7 +2,7 @@ import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js
 
 export function mount(el) {
   if (!el) return;
-  initPane('paneBottom', el, 'bottom');
+  const content = initPane(el, 'bottom');
   const sec = mountSection();
   const measureFile = document.createElement('input');
   measureFile.type = 'file';
@@ -22,5 +22,5 @@ export function mount(el) {
     makeDropdown('micLayoutSel', ['Default']),
     makeButton('btnExportMics', 'Export Mics')
   );
-  el.appendChild(sec);
+  content.appendChild(sec);
 }

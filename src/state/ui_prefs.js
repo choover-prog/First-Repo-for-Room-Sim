@@ -1,30 +1,19 @@
 const PREFIX = 'app.ui.';
 
-function read(key) {
-  const v = localStorage.getItem(PREFIX + key);
-  return v ? JSON.parse(v) : null;
+export function getPaneState() {
+  const json = localStorage.getItem(PREFIX + 'panes') || '{}';
+  return JSON.parse(json);
 }
 
-function write(key, val) {
-  localStorage.setItem(PREFIX + key, JSON.stringify(val));
-}
-
-export function getPaneState(id) {
-  const all = read('panes') || {};
-  return all[id] || {};
-}
-
-export function setPaneState(id, state) {
-  const all = read('panes') || {};
-  all[id] = { ...all[id], ...state };
-  write('panes', all);
+export function setPaneState(next) {
+  localStorage.setItem(PREFIX + 'panes', JSON.stringify(next));
 }
 
 export function getTooltipsEnabled() {
-  const v = read('tooltips');
-  return v === null ? true : v;
+  const v = localStorage.getItem(PREFIX + 'tooltips');
+  return v === null ? true : JSON.parse(v);
 }
 
 export function setTooltipsEnabled(val) {
-  write('tooltips', !!val);
+  localStorage.setItem(PREFIX + 'tooltips', JSON.stringify(!!val));
 }

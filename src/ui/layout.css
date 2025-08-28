@@ -51,7 +51,46 @@
 }
 
 .pane.collapsed {
+  pointer-events: auto;
+}
+
+.pane.left.collapsed {
+  width: 16px;
+  min-width: 16px;
+}
+
+.pane.right.collapsed {
+  width: 16px;
+  min-width: 16px;
+}
+
+.pane.bottom.collapsed {
+  height: 18px;
+  min-height: 18px;
+}
+
+.pane.top.collapsed {
+  height: 22px;
+  min-height: 22px;
+}
+
+.pane .collapse-toggle {
+  position: absolute;
+  inset-inline-end: 6px;
+  inset-block-start: 6px;
+}
+
+.pane.collapsed .content {
   display: none;
+}
+
+.pane .rail-label {
+  position: absolute;
+  writing-mode: vertical-rl;
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+  opacity: .7;
+  font-size: 12px;
 }
 
 .pane .handle {

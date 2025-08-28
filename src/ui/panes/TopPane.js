@@ -2,7 +2,7 @@ import { makeButton, mountSection, initPane } from '../controls.js';
 
 export function mount(el) {
   if (!el) return;
-  initPane('paneTop', el, 'top');
+  const content = initPane(el, 'top');
   const proj = mountSection('Project');
   proj.classList.add('project-group');
   const roomFile = document.createElement('input');
@@ -15,7 +15,7 @@ export function mount(el) {
     makeButton('btnImportRoom', 'Import', 'Import Room'),
     makeButton('btnLoadSample', 'Load Sample', 'Load Sample Project')
   );
-  el.appendChild(proj);
+  content.appendChild(proj);
 
   const sec = mountSection();
   sec.append(
@@ -24,7 +24,8 @@ export function mount(el) {
     makeButton('btnExportJSON', 'Export JSON'),
     makeButton('btnExportPDF', 'Export PDF'),
     makeButton('btnRestartOnboarding', 'Restart Onboarding'),
-    makeButton('btnGuide', 'Guide')
+    makeButton('btnGuide', 'Guide'),
+    makeButton('btnResetLayout', 'Reset Layout', 'Reset pane sizes & visibility')
   );
-  el.appendChild(sec);
+  content.appendChild(sec);
 }

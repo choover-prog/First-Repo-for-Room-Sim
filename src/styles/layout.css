@@ -115,10 +115,20 @@ body { background:var(--bg); color:var(--fg); margin:0; }
 #app.fs-view   #panelLeft,  #app.fs-view   #panelRight,  #app.fs-view   #panelBottom, #app.fs-view  #appHeader { display:none; }
 .splitter-v { position:absolute; top:0; bottom:0; width:6px; cursor:ew-resize; z-index:5; }
 .splitter-h { position:absolute; left:0; right:0; height:6px; cursor:ns-resize; z-index:5; }
-#splitLeft  { right:-3px; }
-#splitRight { left:-3px; }
-#splitTop   { bottom:-3px; }
-#splitBottom{ top:-3px; }
+#splitLeft  { left:-3px; }
+#splitRight { right:-3px; }
+#splitTop   { top:-3px; }
+#splitBottom{ bottom:-3px; }
 .splitter-v::before, .splitter-h::before { content:""; position:absolute; inset:0; background:linear-gradient(to bottom, transparent 45%, var(--line) 50%, transparent 55%); opacity:.7; }
 .splitter-v::before { transform:rotate(90deg); }
 .is-dragging * { cursor:grabbing !important; user-select:none !important; }
+
+#fsExitPill {
+  position: fixed; top: 12px; right: 12px;
+  background: rgba(20,22,28,.9);
+  color: var(--fg, #e6e6e6);
+  border: 1px solid var(--line, rgba(255,255,255,0.08));
+  border-radius: 999px; padding: 8px 12px; z-index: 9999;
+  font-size: 12px; backdrop-filter: blur(4px); cursor: pointer;
+}
+#fsExitPill.hidden { display: none; }

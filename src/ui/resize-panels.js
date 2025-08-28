@@ -24,77 +24,81 @@ document.addEventListener('DOMContentLoaded', () => {
   const sTop    = ensureSplitter('splitTop',    'splitter-h', view);
   const sBottom = ensureSplitter('splitBottom', 'splitter-h', view);
 
-  const K = { leftW:'ui.leftW', rightW:'ui.rightW', bottomH:'ui.bottomH', topH:'ui.topH', fsPanel:'ui.fsPanel' };
-
-  function isFS(){ return !!localStorage.getItem(K.fsPanel); }
+  const GET = (name, fallback)=>{
+    const v = parseFloat(getComputedStyle(app).getPropertyValue(name));
+    return Number.isFinite(v) ? v : fallback;
+  };
+  const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
+  const isGlobalFS = ()=> app.classList.contains('is-fullscreen');
+  const activePanelFS = ()=> ['fs-left','fs-right','fs-top','fs-bottom','fs-view'].some(c=>app.classList.contains(c));
 
   let dragging = null; // 'left'|'right'|'top'|'bottom'
-  let startX=0, startY=0, startLW=0, startRW=0, startBH=0, startTH=0;
+  let startX=0, startY=0, baseLeft=0, baseRight=0, baseTop=0, baseBottom=0;
 
-  const onDown = (which)=>(e)=>{
-    if (isFS()) return; // disable in per-panel fullscreen
-    document.body.classList.add('is-dragging');
+  const startDrag = which => e => {
+    if (isGlobalFS() || activePanelFS()) return;
     dragging = which;
-    const evt = e.touches ? e.touches[0] : e;
-    startX = evt.clientX; startY = evt.clientY;
-    const cs = getComputedStyle(app);
-    startLW = parseFloat(cs.getPropertyValue('--left-w'))  || 280;
-    startRW = parseFloat(cs.getPropertyValue('--right-w')) || 320;
-    startBH = parseFloat(cs.getPropertyValue('--bottom-h'))|| 120;
-    startTH = parseFloat(cs.getPropertyValue('--top-h'))   || 56;
+    document.body.classList.add('is-dragging');
+    const p = e.touches ? e.touches[0] : e;
+    startX = p.clientX; startY = p.clientY;
+    baseLeft   = GET('--left-w', 280);
+    baseRight  = GET('--right-w', 320);
+    baseTop    = GET('--top-h', 56);
+    baseBottom = GET('--bottom-h', 120);
     window.addEventListener('mousemove', onMove);
     window.addEventListener('touchmove', onMove, {passive:false});
-    window.addEventListener('mouseup', onUp, {once:true});
-    window.addEventListener('touchend', onUp, {once:true});
+    window.addEventListener('mouseup', endDrag, {once:true});
+    window.addEventListener('touchend', endDrag, {once:true});
   };
 
   function onMove(e){
     if (!dragging) return;
-    const evt = e.touches ? e.touches[0] : e;
-    const dx = evt.clientX - startX;
-    const dy = evt.clientY - startY;
+    const p = e.touches ? e.touches[0] : e;
+    const dx = p.clientX - startX;
+    const dy = p.clientY - startY;
 
-    // clamp helpers
-    const clamp = (v,min,max)=>Math.max(min, Math.min(max, v));
+    const maxW = Math.min(window.innerWidth * 0.5, 600);
+    const maxTop = Math.min(window.innerHeight * 0.4, 220);
+    const maxBottom = Math.min(window.innerHeight * 0.6, 500);
 
     if (dragging==='left'){
-      const next = clamp(startLW + dx, 180, Math.min(window.innerWidth*0.5, 600));
+      const next = clamp(baseLeft + dx, 180, maxW);
       app.style.setProperty('--left-w', next+'px');
-      localStorage.setItem(K.leftW, String(next));
+      localStorage.setItem('ui.leftW', String(next));
     }
     if (dragging==='right'){
-      const next = clamp(startRW - dx, 180, Math.min(window.innerWidth*0.5, 600));
+      const next = clamp(baseRight - dx, 180, maxW);
       app.style.setProperty('--right-w', next+'px');
-      localStorage.setItem(K.rightW, String(next));
-    }
-    if (dragging==='bottom'){
-      const next = clamp(startBH - dy, 56, Math.min(window.innerHeight*0.6, 500));
-      app.style.setProperty('--bottom-h', next+'px');
-      localStorage.setItem(K.bottomH, String(next));
+      localStorage.setItem('ui.rightW', String(next));
     }
     if (dragging==='top'){
-      const next = clamp(startTH + dy, 44, Math.min(window.innerHeight*0.4, 220));
+      const next = clamp(baseTop + dy, 44, maxTop);
       app.style.setProperty('--top-h', next+'px');
-      localStorage.setItem(K.topH, String(next));
+      localStorage.setItem('ui.topH', String(next));
+    }
+    if (dragging==='bottom'){
+      const next = clamp(baseBottom - dy, 56, maxBottom);
+      app.style.setProperty('--bottom-h', next+'px');
+      localStorage.setItem('ui.bottomH', String(next));
     }
     e.preventDefault?.();
   }
 
-  function onUp(){
+  function endDrag(){
     dragging = null;
     document.body.classList.remove('is-dragging');
     window.removeEventListener('mousemove', onMove);
     window.removeEventListener('touchmove', onMove);
   }
 
-  sLeft.addEventListener('mousedown', onDown('left'));
-  sRight.addEventListener('mousedown', onDown('right'));
-  sBottom.addEventListener('mousedown', onDown('bottom'));
-  sTop.addEventListener('mousedown', onDown('top'));
-  sLeft.addEventListener('touchstart', onDown('left'), {passive:true});
-  sRight.addEventListener('touchstart', onDown('right'), {passive:true});
-  sBottom.addEventListener('touchstart', onDown('bottom'), {passive:true});
-  sTop.addEventListener('touchstart', onDown('top'), {passive:true});
+  sLeft.addEventListener('mousedown', startDrag('left'));
+  sRight.addEventListener('mousedown', startDrag('right'));
+  sTop.addEventListener('mousedown', startDrag('top'));
+  sBottom.addEventListener('mousedown', startDrag('bottom'));
+  sLeft.addEventListener('touchstart', startDrag('left'), {passive:true});
+  sRight.addEventListener('touchstart', startDrag('right'), {passive:true});
+  sTop.addEventListener('touchstart', startDrag('top'), {passive:true});
+  sBottom.addEventListener('touchstart', startDrag('bottom'), {passive:true});
 
   console.info('[resize-panels] splitters ready (left/right/top/bottom).');
 });

@@ -43,6 +43,15 @@ document.addEventListener('DOMContentLoaded', () => {
     fsPanel:'ui.fsPanel' // one of: 'left'|'right'|'bottom'|'top'|'view'|''
   };
 
+  const FS_KEY = K.fsPanel;
+  const fsTagToClass = tag => tag ? 'fs-' + tag : '';
+  let fsExit = null;
+  const clearFS = () => {
+    ['fs-left','fs-right','fs-bottom','fs-top','fs-view'].forEach(cl=>app.classList.remove(cl));
+    localStorage.setItem(FS_KEY,'');
+    fsExit && fsExit.classList.add('hidden');
+  };
+
   // Apply persisted sizes
   const leftW   = parseFloat(localStorage.getItem(K.leftW)   || '') || null;
   const rightW  = parseFloat(localStorage.getItem(K.rightW)  || '') || null;
@@ -61,9 +70,37 @@ document.addEventListener('DOMContentLoaded', () => {
   bottom&& bottom.classList.toggle('is-collapsed', flag(K.bottomCollapsed));
   top   && top.classList.toggle('is-collapsed',    flag(K.topCollapsed));
 
-  // Apply per-panel fullscreen
-  const fs = localStorage.getItem(K.fsPanel) || '';
-  if (fs) app.classList.add('fs-' + fs);
+  // Sanitize persisted fullscreen tag and apply
+  {
+    const tag = localStorage.getItem(FS_KEY) || '';
+    const ok = ['left','right','top','bottom','view'].includes(tag);
+    if (!ok) {
+      localStorage.setItem(FS_KEY,'');
+    } else {
+      app.classList.add(fsTagToClass(tag));
+    }
+  }
+
+  // Create Exit Fullscreen pill
+  fsExit = document.getElementById('fsExitPill');
+  if (!fsExit) {
+    fsExit = document.createElement('button');
+    fsExit.id = 'fsExitPill';
+    fsExit.textContent = 'Exit Fullscreen (Esc)';
+    fsExit.className = 'hidden';
+    document.body.appendChild(fsExit);
+  }
+  fsExit.addEventListener('click', clearFS);
+
+  // Observe FS class changes to toggle pill
+  const mo = new MutationObserver(()=>{
+    const active = ['fs-left','fs-right','fs-bottom','fs-top','fs-view'].some(cl=>app.classList.contains(cl));
+    fsExit.classList.toggle('hidden', !active);
+  });
+  mo.observe(app,{attributes:true, attributeFilter:['class']});
+
+  // Esc exits per-panel fullscreen
+  window.addEventListener('keydown',(e)=>{ if(e.key==='Escape') clearFS(); });
 
   // Collapse/expand handlers
   document.body.addEventListener('click', (e)=>{
@@ -80,19 +117,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const f = e.target.closest('.panel__fs');
     if (f){
+      if (app.classList.contains('is-fullscreen')) return;
       const id = f.getAttribute('data-target');
       const map = { panelLeft:'left', panelRight:'right', panelBottom:'bottom', appHeader:'top', view:'view' };
       const tag = map[id] || '';
-      ['fs-left','fs-right','fs-bottom','fs-top','fs-view'].forEach(cl=>app.classList.remove(cl));
-      if (tag){
-        if (localStorage.getItem(K.fsPanel) === tag) {
-          localStorage.setItem(K.fsPanel,'');
-        } else {
-          app.classList.add('fs-'+tag);
-          localStorage.setItem(K.fsPanel, tag);
-        }
+      const current = localStorage.getItem(FS_KEY) || '';
+      if (current === tag) {
+        clearFS();
       } else {
-        localStorage.setItem(K.fsPanel,'');
+        clearFS();
+        if (tag){
+          app.classList.add(fsTagToClass(tag));
+          localStorage.setItem(FS_KEY, tag);
+          fsExit.classList.remove('hidden');
+        }
       }
     }
   });

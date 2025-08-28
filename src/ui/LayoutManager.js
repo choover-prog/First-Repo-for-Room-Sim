@@ -51,15 +51,22 @@ const LayoutManager = (() => {
     if (!pane) return;
     pane.collapsed = bool;
     const el = pane.el;
-    el.classList.toggle('is-collapsed', bool);
     const isSide = id === 'left' || id === 'right';
     const sizeProp = isSide ? 'width' : 'height';
     const collapsedSize = isSide ? '16px' : id === 'bottom' ? '18px' : '22px';
+
+    // Capture size before toggling collapse so restore works correctly
     if (bool) {
       if (!el.dataset.prevSize) {
-        const cur = el.style[sizeProp] || `${isSide ? el.offsetWidth : el.offsetHeight}px`;
+        const rect = el.getBoundingClientRect();
+        const cur = (isSide ? rect.width : rect.height) + 'px';
         el.dataset.prevSize = cur;
       }
+    }
+
+    el.classList.toggle('is-collapsed', bool);
+
+    if (bool) {
       el.style[sizeProp] = collapsedSize;
     } else {
       const prev = el.dataset.prevSize;

@@ -27,14 +27,24 @@
   <body>
     <div id="app">
       <header id="appHeader">
-        <div class="hdr__title">Navigation</div>
-        <button id="btnFullscreen" title="Fullscreen" aria-label="Fullscreen"></button>
+        <div class="panel__hdr">
+          <div class="panel__title">Navigation</div>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="appHeader" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="appHeader" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+            <button id="btnFullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+          </div>
+        </div>
+        <div class="panel__body" id="appHeaderBody"></div>
       </header>
 
       <aside id="panelLeft">
         <div class="panel__hdr">
           <div class="panel__title">Controls</div>
-          <button class="panel__toggle" data-target="panelLeft" aria-label="Collapse/Expand"></button>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelLeft" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelLeft" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
         </div>
         <div class="panel__body" id="panelLeftBody">
           <div id="ui">
@@ -88,7 +98,10 @@
       <section id="panelBottom">
         <div class="panel__hdr">
           <div class="panel__title">Viewer Controls</div>
-          <button class="panel__toggle" data-target="panelBottom" aria-label="Collapse/Expand"></button>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelBottom" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelBottom" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
         </div>
         <div class="panel__body" id="panelBottomBody">
           <div id="objToolbar" class="viewer-toolbar" data-role="viewer-toolbar">
@@ -108,7 +121,10 @@
       <aside id="panelRight">
         <div class="panel__hdr">
           <div class="panel__title">Equipment</div>
-          <button class="panel__toggle" data-target="panelRight" aria-label="Collapse/Expand"></button>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelRight" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelRight" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
         </div>
         <div class="panel__body" id="panelRightBody"></div>
       </aside>
@@ -116,9 +132,9 @@
 
     <!-- ESM entry -->
     <script type="module" src="/src/main.js"></script>
-    <script type="module" src="/src/ui/layout.js"></script>
     <script type="module" src="/src/ui/layout-enforce.js"></script>
-      <script type="module" src="/src/ui/toolbar-objects.js"></script>
-      <script type="module" src="/src/ui/resize-bottom.js"></script>
+    <script type="module" src="/src/ui/toolbar-objects.js"></script>
+    <script type="module" src="/src/ui/panels.js"></script>
+    <script type="module" src="/src/ui/resize-panels.js"></script>
     </body>
   </html>

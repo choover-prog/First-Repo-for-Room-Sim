@@ -22,48 +22,71 @@
       .small .muted { opacity:.85 }
   [data-tip] { text-decoration-style:dotted; }
     </style>
+    <link rel="stylesheet" href="/src/styles/layout.css" />
   </head>
   <body>
     <div id="app">
+      <header id="appHeader">
+        <div class="hdr__title">Navigation</div>
+        <button id="btnFullscreen" title="Fullscreen" aria-label="Fullscreen"></button>
+      </header>
+
+      <aside id="panelLeft">
+        <div class="panel__hdr">
+          <div class="panel__title">Controls</div>
+          <button class="panel__toggle" data-target="panelLeft" aria-label="Collapse/Expand"></button>
+        </div>
+        <div class="panel__body" id="panelLeftBody">
+          <div id="ui">
+            <h1>Viewer</h1>
+            <div class="muted">Pick a .glb or use the sample.</div>
+
+            <div class="row">
+              <input type="file" id="file" accept=".glb,.gltf" />
+              <button id="loadSample">Load Sample</button>
+            </div>
+
+            <div class="row">
+              <label><input type="checkbox" id="gridT" checked /> Grid</label>
+              <label><input type="checkbox" id="axesT" checked /> Axes</label>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <button id="measureBtn" class="tog">Measure</button>
+              <select id="units">
+                <option value="m">Meters</option>
+                <option value="ft">Feet</option>
+              </select>
+              <button id="clearMeasure">Clear</button>
+            </div>
+
+            <div id="stats" class="muted"></div>
+            <div class="tips">
+              Tip: drag & drop a GLB anywhere in the left panel.<br/>
+              Esc = cancel/clear current measurement.
+            </div>
+          </div>
+        </div>
+      </aside>
+
       <div id="view">
         <!-- dynamic canvas goes here -->
         <div id="measureLabel" class="measure-label" style="display:none">0.00 m</div>
       </div>
 
-      <div id="ui">
-        <h1>Viewer</h1>
-        <div class="muted">Pick a .glb or use the sample.</div>
-
-        <div class="row">
-          <input type="file" id="file" accept=".glb,.gltf" />
-          <button id="loadSample">Load Sample</button>
+      <aside id="panelRight">
+        <div class="panel__hdr">
+          <div class="panel__title">Equipment</div>
+          <button class="panel__toggle" data-target="panelRight" aria-label="Collapse/Expand"></button>
         </div>
-
-        <div class="row">
-          <label><input type="checkbox" id="gridT" checked /> Grid</label>
-          <label><input type="checkbox" id="axesT" checked /> Axes</label>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="row">
-          <button id="measureBtn" class="tog">Measure</button>
-          <select id="units">
-            <option value="m">Meters</option>
-            <option value="ft">Feet</option>
-          </select>
-          <button id="clearMeasure">Clear</button>
-        </div>
-
-        <div id="stats" class="muted"></div>
-        <div class="tips">
-          Tip: drag & drop a GLB anywhere in the left panel.<br/>
-          Esc = cancel/clear current measurement.
-        </div>
-      </div>
+        <div class="panel__body" id="panelRightBody"></div>
+      </aside>
     </div>
 
     <!-- ESM entry -->
     <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/ui/layout.js"></script>
   </body>
 </html>

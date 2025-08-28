@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State persistence (left/bottom/right collapse + fullscreen)
   const KEY_L='ui.leftCollapsed', KEY_B='ui.bottomCollapsed', KEY_R='ui.rightCollapsed', KEY_F='ui.fullscreen';
-  const KEY_LW='ui.leftWidth', KEY_RW='ui.rightWidth', KEY_BH='ui.bottomHeight';
+  const KEY_LW='ui.leftWidth', KEY_RW='ui.rightWidth';
   const state = {
     leftCollapsed:   localStorage.getItem(KEY_L) === 'true',
     bottomCollapsed: localStorage.getItem(KEY_B) === 'true',
@@ -102,10 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
   };
   const storedLW = parseInt(localStorage.getItem(KEY_LW),10);
   const storedRW = parseInt(localStorage.getItem(KEY_RW),10);
-  const storedBH = parseInt(localStorage.getItem(KEY_BH),10);
   if (!isNaN(storedLW)) app.style.setProperty('--left-width', storedLW + 'px');
   if (!isNaN(storedRW)) app.style.setProperty('--right-width', storedRW + 'px');
-  if (!isNaN(storedBH)) app.style.setProperty('--bottom-height', storedBH + 'px');
   const apply = ()=>{
     left.classList.toggle('is-collapsed',   state.leftCollapsed);
     bottom.classList.toggle('is-collapsed', state.bottomCollapsed);
@@ -137,43 +135,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const res = panel.querySelector('.panel__resizer') || document.createElement('div');
     res.className = 'panel__resizer';
     if (!res.parentElement) panel.appendChild(res);
-    let startX,startY,startW,startH;
+    let startX,startW;
     const onMove = (e)=>{
-      if (side==='left' || side==='right'){
-        const dx = e.clientX - startX;
-        let w = side==='left'?startW+dx:startW-dx;
-        w = Math.max(150,w);
-        app.style.setProperty(side==='left'?'--left-width':'--right-width', w+'px');
-      } else if (side==='bottom'){
-        const dy = startY - e.clientY;
-        let h = startH+dy;
-        h = Math.max(44,h);
-        app.style.setProperty('--bottom-height', h+'px');
-      }
+      const dx = e.clientX - startX;
+      let w = side==='left'?startW+dx:startW-dx;
+      w = Math.max(150,w);
+      app.style.setProperty(side==='left'?'--left-width':'--right-width', w+'px');
     };
     const onUp = ()=>{
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
-      if (side==='left'||side==='right'){
-        const val = parseInt(getComputedStyle(app).getPropertyValue(side==='left'?'--left-width':'--right-width'),10);
-        localStorage.setItem(side==='left'?KEY_LW:KEY_RW, String(val));
-      } else if (side==='bottom'){
-        const val = parseInt(getComputedStyle(app).getPropertyValue('--bottom-height'),10);
-        localStorage.setItem(KEY_BH, String(val));
-      }
+      const val = parseInt(getComputedStyle(app).getPropertyValue(side==='left'?'--left-width':'--right-width'),10);
+      localStorage.setItem(side==='left'?KEY_LW:KEY_RW, String(val));
     };
     res.addEventListener('mousedown',(e)=>{
       e.preventDefault();
-      startX = e.clientX; startY = e.clientY;
+      startX = e.clientX;
       const rect = panel.getBoundingClientRect();
-      startW = rect.width; startH = rect.height;
+      startW = rect.width;
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onUp);
     });
   }
   makeResizable(left,'left');
   makeResizable(right,'right');
-  makeResizable(bottom,'bottom');
 
   console.info('[layout] 5-region layout enforced non-destructively.');
 });

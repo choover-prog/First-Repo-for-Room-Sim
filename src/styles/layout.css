@@ -4,11 +4,12 @@
   --bg-panel:#151821;
   --fg:#e6e6e6;
   --line:rgba(255,255,255,0.08);
+  --bottom-h: 56px;
 }
 body { background:var(--bg); color:var(--fg); margin:0; }
 #app {
   display:grid;
-  grid-template-rows:56px 1fr var(--bottom-height,56px);        /* header, middle, bottom bar */
+  grid-template-rows:56px 1fr var(--bottom-h,56px);        /* header, middle, bottom bar */
   grid-template-columns:var(--left-width,280px) minmax(0,1fr) var(--right-width,320px);
   grid-template-areas:
     "hdr   hdr   hdr"
@@ -52,4 +53,22 @@ body { background:var(--bg); color:var(--fg); margin:0; }
 .region__placeholder { opacity:0.4; font-size:12px; padding:10px; }
 
 .viewer-toolbar button.active { outline:2px solid #4da3ff; }
+
+/* Bottom splitter overlay */
+.splitter--bottom {
+  grid-area: view;
+  position: relative;
+}
+.splitter--bottom::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(var(--bottom-h, 56px));
+  height: 6px;
+  cursor: ns-resize;
+  z-index: 5;
+  background: linear-gradient(to bottom, transparent 45%, rgba(255,255,255,0.08) 50%, transparent 55%);
+}
+#app.is-fullscreen .splitter--bottom::after { display:none; }
+#panelBottom.is-collapsed + .splitter--bottom::after { display:none; }
 

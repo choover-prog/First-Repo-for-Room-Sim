@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const header = ensurePanel('appHeader','Navigation');
   const left   = ensurePanel('panelLeft','Controls');
   const right  = ensurePanel('panelRight','Equipment');
-  const bottom = ensurePanel('panelBottom','Viewer Controls');
+  const bottom = ensurePanel('panelBottom','Tools & Controls');
 
   // If previous runs put “Controls” content in the right panel, move those nodes to left body.
   function moveChildrenIfLabeled(srcBody, dstBody, keywords) {
@@ -77,8 +77,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const bottomBody = document.getElementById('panelBottomBody');
 
   // Heuristic re-homing:
-  // Anything with “speaker”, “mlp”, “controls”, “measure”, “snap”, “camera” -> LEFT or BOTTOM depending on type
-  moveChildrenIfLabeled(rightBody, leftBody, ['controls','speaker','mlp','measure','snap','camera']);
+  // Anything with “controls”, “mlp”, “measure”, “snap”, “camera” -> LEFT
+  moveChildrenIfLabeled(rightBody, leftBody, ['controls','mlp','measure','snap','camera']);
+  // Move primary UI container to bottom bar if present
+  const ui = document.getElementById('ui');
+  if (ui && bottomBody && ui.parentElement !== bottomBody) bottomBody.appendChild(ui);
+  // Relocate equipment panel from UI container to right bar
+  if (ui && rightBody) {
+    const eqHeader = [...ui.querySelectorAll('h2')].find(h=>/equipment/i.test(h.textContent));
+    if (eqHeader) rightBody.appendChild(eqHeader.parentElement);
+  }
   // If there is an existing viewer toolbar (by role or class), move to bottom
   const toolbar = document.querySelector('[data-role="viewer-toolbar"], .viewer-toolbar, #viewerToolbar');
   if (toolbar && bottomBody) bottomBody.appendChild(toolbar);

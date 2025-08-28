@@ -66,11 +66,11 @@ document.addEventListener('DOMContentLoaded', () => {
     else view.parentNode.appendChild(right);
   }
 
-  // Move existing #ui (if any) into left panel body
+  // Move existing #ui (if any) into bottom bar when available
   const oldUI = $('#ui');
-  const leftBody = $('#panelLeftBody');
-  if (oldUI && leftBody && !leftBody.contains(oldUI)) {
-    leftBody.appendChild(oldUI);
+  const bottomBody = $('#panelBottomBody');
+  if (oldUI && bottomBody && !bottomBody.contains(oldUI)) {
+    bottomBody.appendChild(oldUI);
   }
 
   // State

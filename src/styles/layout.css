@@ -1,4 +1,10 @@
-:root { --bg:#0f1115; --bg-panel:#151821; --fg:#e6e6e6; --line:rgba(255,255,255,0.08); }
+:root {
+  color-scheme: dark;
+  --bg:#0f1115;
+  --bg-panel:#151821;
+  --fg:#e6e6e6;
+  --line:rgba(255,255,255,0.08);
+}
 body { background:var(--bg); color:var(--fg); margin:0; }
 #app {
   display:grid;

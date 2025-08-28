@@ -25,8 +25,6 @@ const container   = document.getElementById('view');
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
-const fileInput   = document.getElementById('file');
-const loadSample  = document.getElementById('loadSample');
 const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
@@ -55,6 +53,16 @@ mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
 mountBottomPane(document.getElementById('paneBottom'));
+
+const roomFileInput = document.getElementById('roomFile');
+const btnImportRoom = document.getElementById('btnImportRoom');
+const btnLoadSample = document.getElementById('btnLoadSample');
+const measureFileInput = document.getElementById('measureFile');
+const btnImportMeasurements = document.getElementById('btnImportMeasurements');
+
+btnImportRoom?.addEventListener('click', () => roomFileInput?.click());
+btnLoadSample?.addEventListener('click', () => loadURL('/models/sample.glb'));
+btnImportMeasurements?.addEventListener('click', () => measureFileInput?.click());
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');
@@ -397,9 +405,11 @@ async function loadURL(url) {
 }
 
 // File input / Sample / Drag&Drop
-fileInput.addEventListener('change', async e => {
+roomFileInput?.addEventListener('change', async e => {
   const f = e.target.files?.[0];
   if (!f) return;
+  console.info('[UI]', 'btnImportRoom', f.name);
+  window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportRoom' } }));
   statsEl.textContent = `Loading local file: ${f.name}`;
   const url = URL.createObjectURL(f);
   try {
@@ -413,7 +423,12 @@ fileInput.addEventListener('change', async e => {
   }
 });
 
-loadSample.addEventListener('click', () => loadURL('/models/sample.glb'));
+measureFileInput?.addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  console.info('[UI]', 'btnImportMeasurements', f.name);
+  window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportMeasurements' } }));
+});
 
 container.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
 container.addEventListener('drop', async e => {

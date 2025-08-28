@@ -1,21 +1,26 @@
-import { makeButton, mountSection, initPane } from '../controls.js';
+import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js';
 
 export function mount(el) {
   if (!el) return;
   initPane('paneBottom', el, 'bottom');
   const sec = mountSection();
-  const file = document.createElement('input');
-  file.type = 'file';
-  file.id = 'btnImportREW';
-  file.addEventListener('change', () => {
-    console.info('[UI]', 'btnImportREW');
-    window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportREW' } }));
+  const measureFile = document.createElement('input');
+  measureFile.type = 'file';
+  measureFile.id = 'measureFile';
+  measureFile.accept = '.csv,.txt,.json,.wav';
+  measureFile.hidden = true;
+  measureFile.addEventListener('change', () => {
+    console.info('[UI]', 'btnImportMeasurements');
+    window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportMeasurements' } }));
   });
   sec.append(
     makeButton('btnChat', 'AI Coach'),
     makeButton('btnCalAssistant', 'Calibration Assistant'),
-    file,
-    makeButton('btnExportFilters', 'Export Filters')
+    measureFile,
+    makeButton('btnImportMeasurements', 'Choose File', 'Upload Measurements'),
+    makeButton('btnExportFilters', 'Export Filters'),
+    makeDropdown('micLayoutSel', ['Default']),
+    makeButton('btnExportMics', 'Export Mics')
   );
   el.appendChild(sec);
 }

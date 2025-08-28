@@ -13,6 +13,7 @@ import './state/ui.js';
 import { bindHotkeys } from './ui/Hotkeys.js';
 import { mountViewerHost } from './render/ViewerHost.js';
 import { mountSpeakerPanel } from './ui/SpeakerPanel.js';
+import { mountMLPPanel } from './ui/MLPPanel.js';
 import { projectStore } from './state/projectStore';
 import { SceneGraph } from './viewer/SceneGraph';
 import { RaycastController } from './three/interaction/RaycastController';
@@ -24,7 +25,8 @@ const { regions } = mountLayout({ root: document.getElementById('app') });
 bindHotkeys();
 mountViewerHost(regions.viewer);
 mountEquipmentPanel(regions.right);
-mountSpeakerPanel(regions.dock);
+mountSpeakerPanel(regions.left);
+mountMLPPanel(regions.left);
 
 // DOM
 const container   = document.getElementById('view');
@@ -173,8 +175,21 @@ renderer.domElement.addEventListener('pointerdown', (ev) => {
 });
 
 window.addEventListener('keydown', (e) => {
+  const state = projectStore.getState();
+  const id = state.project.selectedId;
   if (e.key === 'Escape') {
-    projectStore.getState().setMode('idle');
+    state.setMode('idle');
+  } else if (e.key === 'Delete' && id) {
+    state.delete(id);
+  } else if ((e.key === 'z' || e.key === 'Z') && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    state.undo();
+  } else if ((e.key === 'y' || e.key === 'Y') && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    state.redo();
+  } else if ((e.key === 'r' || e.key === 'R') && id && id !== 'mlp') {
+    const delta = e.shiftKey ? -5 : 5;
+    state.rotate(id, delta);
   }
 });
 

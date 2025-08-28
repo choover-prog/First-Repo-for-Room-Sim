@@ -50,6 +50,7 @@ export interface ProjectState {
   addMLP: (data: { pos: Vec3 }) => void;
   select: (id: string | null) => void;
   move: (id: string, pos: Vec3) => void;
+  rotate: (id: string, deg: number) => void;
   delete: (id: string) => void;
   undo: () => void;
   redo: () => void;
@@ -60,6 +61,7 @@ export type Command =
   | { type: 'selectSpeaker'; id: string | null }
   | { type: 'moveSpeaker'; id: string; pos: Vec3 }
   | { type: 'deleteSpeaker'; id: string }
+  | { type: 'rotateSpeaker'; id: string; deg: number }
   | { type: 'setMlp'; pos: Vec3 }
   | { type: 'deleteMlp' };
 
@@ -71,7 +73,8 @@ const defaultProject: Project = { speakers: [], mlp: null, selectedId: null };
 
 function save(project: Project) {
   try {
-    localStorage.setItem(DATA_KEY, JSON.stringify(project));
+    const p = { ...project, selectedId: null };
+    localStorage.setItem(DATA_KEY, JSON.stringify(p));
     localStorage.setItem(VER_KEY, VERSION);
   } catch {}
 }
@@ -80,7 +83,11 @@ function hydrate(): Project {
   try {
     if (localStorage.getItem(VER_KEY) === VERSION) {
       const raw = localStorage.getItem(DATA_KEY);
-      if (raw) return JSON.parse(raw) as Project;
+      if (raw) {
+        const proj = JSON.parse(raw) as Project;
+        proj.selectedId = null;
+        return proj;
+      }
     }
   } catch {}
   return { ...defaultProject };
@@ -115,6 +122,12 @@ function reduce(project: Project, cmd: Command): Project {
       const speakers = project.speakers.filter((s) => s.id !== cmd.id);
       const selectedId = project.selectedId === cmd.id ? null : project.selectedId;
       return { ...project, speakers, selectedId };
+    }
+    case 'rotateSpeaker': {
+      const speakers = project.speakers.map((s) =>
+        s.id === cmd.id ? { ...s, rotY: s.rotY + (cmd.deg * Math.PI) / 180 } : s
+      );
+      return { ...project, speakers };
     }
     case 'setMlp': {
       return { ...project, mlp: { ...cmd.pos }, selectedId: 'mlp' };
@@ -165,7 +178,11 @@ export function createProjectStore(initial?: Project): StoreApi<ProjectState> {
       addSpeaker: ({ model, pos }) => apply({ type: 'addSpeaker', model, pos }),
       addMLP: ({ pos }) => apply({ type: 'setMlp', pos }),
       select: (id) => apply({ type: 'selectSpeaker', id }),
-      move: (id, pos) => apply({ type: 'moveSpeaker', id, pos }),
+      move: (id, pos) =>
+        apply(id === 'mlp' ? { type: 'setMlp', pos } : { type: 'moveSpeaker', id, pos }),
+      rotate: (id, deg) => {
+        if (id !== 'mlp') apply({ type: 'rotateSpeaker', id, deg });
+      },
       delete: (id) => {
         if (id === 'mlp') apply({ type: 'deleteMlp' });
         else apply({ type: 'deleteSpeaker', id });

@@ -1,19 +1,9 @@
 import { projectStore } from '../state/projectStore';
 
-const MODELS = ['Model A', 'Model B'];
-
-export function mountSpeakerPanel(container) {
+export function mountMLPPanel(container) {
   const root = document.createElement('div');
-  const modelSel = document.createElement('select');
-  MODELS.forEach((m) => {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = m;
-    modelSel.appendChild(opt);
-  });
-
   const addBtn = document.createElement('button');
-  addBtn.textContent = 'Add Speaker';
+  addBtn.textContent = 'Add MLP';
   const delBtn = document.createElement('button');
   delBtn.textContent = 'Delete';
   const undoBtn = document.createElement('button');
@@ -21,17 +11,18 @@ export function mountSpeakerPanel(container) {
   const redoBtn = document.createElement('button');
   redoBtn.textContent = 'Redo';
   const list = document.createElement('ul');
-
-  root.append(modelSel, addBtn, delBtn, undoBtn, redoBtn, list);
+  root.append(addBtn, delBtn, undoBtn, redoBtn, list);
   container.appendChild(root);
 
   addBtn.onclick = () => {
-    projectStore.getState().setMode('placingSpeaker', { model: modelSel.value || MODELS[0] });
+    const { project, setMode, select } = projectStore.getState();
+    if (project.mlp) select('mlp');
+    else setMode('placingMLP');
   };
 
   delBtn.onclick = () => {
     const { project, delete: del } = projectStore.getState();
-    if (project.selectedId) del(project.selectedId);
+    if (project.selectedId === 'mlp') del('mlp');
   };
 
   undoBtn.onclick = () => projectStore.getState().undo();
@@ -40,16 +31,15 @@ export function mountSpeakerPanel(container) {
   function render() {
     const { project } = projectStore.getState();
     list.innerHTML = '';
-    project.speakers.forEach((s) => {
+    if (project.mlp) {
       const li = document.createElement('li');
-      li.textContent = s.model;
-      if (s.id === project.selectedId) li.style.fontWeight = 'bold';
-      li.onclick = () => projectStore.getState().select(s.id);
+      li.textContent = `MLP (${project.mlp.x.toFixed(2)}, ${project.mlp.z.toFixed(2)})`;
+      if (project.selectedId === 'mlp') li.style.fontWeight = 'bold';
+      li.onclick = () => projectStore.getState().select('mlp');
       list.appendChild(li);
-    });
+    }
   }
 
   projectStore.subscribe(render);
   render();
 }
-

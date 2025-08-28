@@ -2,8 +2,8 @@
 body { background:var(--bg); color:var(--fg); margin:0; }
 #app {
   display:grid;
-  grid-template-rows:56px 1fr 56px;        /* header, middle, bottom bar */
-  grid-template-columns:280px minmax(0,1fr) 320px;
+  grid-template-rows:56px 1fr var(--bottom-height,56px);        /* header, middle, bottom bar */
+  grid-template-columns:var(--left-width,280px) minmax(0,1fr) var(--right-width,320px);
   grid-template-areas:
     "hdr   hdr   hdr"
     "left  view  right"
@@ -12,9 +12,9 @@ body { background:var(--bg); color:var(--fg); margin:0; }
 }
 #appHeader   { grid-area:hdr;   display:flex; align-items:center; justify-content:space-between;
   padding:0 12px; background:var(--bg-panel); border-bottom:1px solid var(--line); }
-#panelLeft   { grid-area:left;   background:var(--bg-panel); border-right:1px solid var(--line); min-width:0; overflow:hidden; }
-#panelRight  { grid-area:right;  background:var(--bg-panel); border-left:1px solid var(--line); min-width:0; overflow:hidden; }
-#panelBottom { grid-area:bottom; background:var(--bg-panel); border-top:1px solid var(--line); min-height:0; overflow:hidden; }
+#panelLeft   { grid-area:left;   background:var(--bg-panel); border-right:1px solid var(--line); min-width:0; overflow:hidden; position:relative; }
+#panelRight  { grid-area:right;  background:var(--bg-panel); border-left:1px solid var(--line); min-width:0; overflow:hidden; position:relative; }
+#panelBottom { grid-area:bottom; background:var(--bg-panel); border-top:1px solid var(--line); min-height:0; overflow:hidden; position:relative; }
 #view        { grid-area:view;   position:relative; min-width:0; min-height:0; }
 #view canvas { position:absolute; inset:0; width:100%; height:100%; display:block; z-index:0; }
 
@@ -30,6 +30,13 @@ body { background:var(--bg); color:var(--fg); margin:0; }
 #panelLeft.is-collapsed   .panel__toggle::before { transform:rotate(-90deg); }
 #panelRight.is-collapsed  .panel__toggle::before { transform:rotate(90deg); }
 #panelBottom.is-collapsed .panel__toggle::before { transform:rotate(180deg); }
+
+/* Resize handles */
+.panel__resizer { position:absolute; background:var(--line); opacity:0; transition:opacity .2s; }
+#panelLeft:hover  .panel__resizer,#panelRight:hover .panel__resizer,#panelBottom:hover .panel__resizer{opacity:1;}
+#panelLeft .panel__resizer  { top:0; right:0; width:4px; height:100%; cursor:col-resize; }
+#panelRight .panel__resizer { top:0; left:0;  width:4px; height:100%; cursor:col-resize; }
+#panelBottom .panel__resizer{ top:0; left:0;  width:100%; height:4px; cursor:row-resize; }
 
 /* Fullscreen hides side/bottom panels, expands center */
 #app.is-fullscreen #panelLeft, #app.is-fullscreen #panelRight, #app.is-fullscreen #panelBottom { display:none; }

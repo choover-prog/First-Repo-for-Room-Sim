@@ -75,11 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // State
   const KEY_L='ui.leftCollapsed', KEY_R='ui.rightCollapsed', KEY_F='ui.fullscreen';
+  const KEY_LW='ui.leftWidth', KEY_RW='ui.rightWidth';
   const state = {
     leftCollapsed: localStorage.getItem(KEY_L) === 'true',
     rightCollapsed: localStorage.getItem(KEY_R) === 'true',
     fullscreen: localStorage.getItem(KEY_F) === 'true',
   };
+  const storedLW = parseInt(localStorage.getItem(KEY_LW),10);
+  const storedRW = parseInt(localStorage.getItem(KEY_RW),10);
+  if (!isNaN(storedLW)) app.style.setProperty('--left-width', storedLW + 'px');
+  if (!isNaN(storedRW)) app.style.setProperty('--right-width', storedRW + 'px');
   const apply = ()=>{
     left.classList.toggle('is-collapsed', state.leftCollapsed);
     right.classList.toggle('is-collapsed', state.rightCollapsed);
@@ -104,6 +109,36 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   const btnFS = document.getElementById('btnFullscreen');
   btnFS && btnFS.addEventListener('click', ()=>{ state.fullscreen = !state.fullscreen; apply(); save(); });
+
+  // Resizable panels
+  function makeResizable(panel, side) {
+    const res = panel.querySelector('.panel__resizer') || document.createElement('div');
+    res.className = 'panel__resizer';
+    if (!res.parentElement) panel.appendChild(res);
+    let startX, startWidth;
+    const storageKey = side === 'left' ? KEY_LW : KEY_RW;
+    const onMove = (e)=>{
+      const dx = e.clientX - startX;
+      let w = side === 'left' ? startWidth + dx : startWidth - dx;
+      w = Math.max(150, w);
+      app.style.setProperty(side === 'left' ? '--left-width' : '--right-width', w + 'px');
+    };
+    const onUp = ()=>{
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      const val = parseInt(getComputedStyle(app).getPropertyValue(side === 'left' ? '--left-width' : '--right-width'),10);
+      if (!isNaN(val)) localStorage.setItem(storageKey, String(val));
+    };
+    res.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      startX = e.clientX;
+      startWidth = panel.getBoundingClientRect().width;
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
+  }
+  makeResizable(left, 'left');
+  makeResizable(right, 'right');
 
   // DO NOT resize or replace canvas here; viewer code already handles it.
   console.info('[layout] enhancement applied (non-destructive).');

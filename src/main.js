@@ -10,23 +10,71 @@ import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
+import './ui/layout.css';
+import { mount as mountTopPane } from './ui/panes/TopPane.js';
+import { mount as mountLeftPane } from './ui/panes/LeftPane.js';
+import { mount as mountRightPane } from './ui/panes/RightPane.js';
+import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
+import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
+import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
+
+function enforceFourPanes() {
+  const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
+  document.querySelectorAll('header, footer').forEach((node) => {
+    console.warn('[UI] Removing unexpected container:', node.tagName);
+    node.remove();
+  });
+  const seen = new Set();
+  document.querySelectorAll('.pane').forEach((node) => {
+    const id = node.id;
+    if (!ids.includes(id)) {
+      console.warn('[UI] Removing unexpected pane:', id);
+      node.remove();
+      return;
+    }
+    if (seen.has(id)) {
+      console.warn('[UI] Duplicate pane, removing:', id);
+      node.remove();
+    } else {
+      seen.add(id);
+    }
+  });
+  ids.forEach((id) => {
+    if (!document.getElementById(id)) {
+      const div = document.createElement('div');
+      div.id = id;
+      div.className = `pane ${id.replace('pane', '').toLowerCase()}`;
+      document.getElementById('uiHost')?.appendChild(div);
+      console.info('[UI] Recreated missing pane:', id);
+    }
+  });
+}
+enforceFourPanes();
+const panes = document.querySelectorAll('.pane');
+if (panes.length !== 4) console.warn('[UI] Expected 4 panes, found', panes.length);
 
 const mToFt = 3.28084;
 
 // DOM
-const container   = document.getElementById('view');
+let container   = document.getElementById('view');
+if (!container) {
+  console.warn('[UI] #view container missing, creating one');
+  container = document.createElement('div');
+  container.id = 'view';
+  container.className = 'viewer';
+  document.getElementById('uiHost')?.appendChild(container);
+}
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
-const fileInput   = document.getElementById('file');
-const loadSample  = document.getElementById('loadSample');
 const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
-const app         = document.getElementById('app');
-const btnFullscreen = document.getElementById('btnFullscreen');
-installFullscreenGuard(app);
+const app         = document.getElementById('uiHost');
+const btnFullscreen = document.getElementById('btnFullscreenToggle');
+if (app) installFullscreenGuard(app);
+installEscFullscreenFix();
 btnFullscreen?.addEventListener('click', async () => {
   if (!document.fullscreenElement) {
     try {
@@ -38,9 +86,124 @@ btnFullscreen?.addEventListener('click', async () => {
       console.warn('Failed to enter fullscreen', e);
     }
   } else {
-    window.exitFS?.();
+    exitFullscreenSafe();
   }
 });
+
+// Mount new UI panes
+mountTopPane(document.getElementById('paneTop'));
+mountLeftPane(document.getElementById('paneLeft'));
+mountRightPane(document.getElementById('paneRight'));
+mountEquipmentPanel();
+mountBottomPane(document.getElementById('paneBottom'));
+
+function verifyPaneButtons() {
+  const top = document.getElementById('paneTop');
+  const left = document.getElementById('paneLeft');
+  const right = document.getElementById('paneRight');
+  const bottom = document.getElementById('paneBottom');
+  if (top) {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel'].forEach(id => {
+      if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
+    });
+  }
+  if (left) {
+    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker'].forEach(id => {
+      if (!left.querySelector('#' + id)) console.warn('[UI] Left pane missing', id);
+    });
+  }
+  if (right) {
+    ['selSpeakerModel','selAmpModel','btnAddToCart','btnCart'].forEach(id => {
+      if (!right.querySelector('#' + id)) console.warn('[UI] Right pane missing', id);
+    });
+  }
+  if (bottom) {
+    ['btnChat','btnCalAssistant','btnImportMeasurements','btnExportFilters','micLayoutSel','btnExportMics'].forEach(id => {
+      if (!bottom.querySelector('#' + id)) console.warn('[UI] Bottom pane missing', id);
+    });
+  }
+}
+verifyPaneButtons();
+
+function savePane(side, partial) {
+  const state = getPaneState();
+  state[side] = { ...(state[side] || {}), ...partial };
+  setPaneState(state);
+}
+
+function applyPaneState(state) {
+  ['top', 'left', 'right', 'bottom'].forEach((side) => {
+    const el = document.getElementById('pane' + side.charAt(0).toUpperCase() + side.slice(1));
+    if (!el) return;
+    const s = state[side] || { open: true };
+    el.classList.toggle('collapsed', s.open === false);
+    if (s.size) {
+      if (side === 'left' || side === 'right') el.style.width = s.size + 'px';
+      else el.style.height = s.size + 'px';
+    }
+  });
+}
+
+function togglePane(paneId) {
+  const side = paneId.replace('pane', '').toLowerCase();
+  const el = document.getElementById(paneId);
+  if (!el) return;
+  const collapsed = el.classList.toggle('collapsed');
+  savePane(side, { open: !collapsed });
+}
+
+function resetLayout() {
+  const defaults = {
+    top:    { open: true, size: 48 },
+    left:   { open: true, size: 280 },
+    right:  { open: true, size: 320 },
+    bottom: { open: true, size: 56 }
+  };
+  setPaneState(defaults);
+  applyPaneState(defaults);
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  console.info('[UI] Layout reset');
+}
+
+applyPaneState(getPaneState());
+
+['Top', 'Left', 'Right', 'Bottom'].forEach((side) => {
+  const paneId = 'pane' + side;
+  document.getElementById(`btnCollapse${side}`)?.addEventListener('click', () => togglePane(paneId));
+  const paneEl = document.getElementById(paneId);
+  paneEl?.addEventListener('click', (e) => {
+    if (!paneEl.classList.contains('collapsed')) return;
+    if (e.target === paneEl || e.target.classList.contains('rail-label')) {
+      togglePane(paneId);
+    }
+  });
+});
+
+document.getElementById('btnResetLayout')?.addEventListener('click', resetLayout);
+
+document.addEventListener('keydown', (e) => {
+  if (e.shiftKey && !e.ctrlKey && !e.altKey) {
+    const map = { T: 'paneTop', L: 'paneLeft', R: 'paneRight', B: 'paneBottom' };
+    const k = e.key.toUpperCase();
+    if (map[k]) { e.preventDefault(); togglePane(map[k]); }
+  }
+  if (e.ctrlKey && e.altKey && e.key === '0') {
+    e.preventDefault();
+    resetLayout();
+  }
+});
+
+const roomFileInput = document.getElementById('roomFile');
+const btnImportRoom = document.getElementById('btnImportRoom');
+const btnLoadSample = document.getElementById('btnLoadSample');
+const measureFileInput = document.getElementById('measureFile');
+const btnImportMeasurements = document.getElementById('btnImportMeasurements');
+
+btnImportRoom?.addEventListener('click', () => roomFileInput?.click());
+btnLoadSample?.addEventListener('click', () => loadURL('/models/sample.glb'));
+btnImportMeasurements?.addEventListener('click', () => measureFileInput?.click());
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');
@@ -79,7 +242,6 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
 
 // Renderer / Scene / Camera
@@ -149,8 +311,8 @@ currentPersona = { tooltipsEnabled: isTooltipsEnabled() };
 badgeManager = new BadgeManager(currentPersona);
 
 // ---------- Utility UI ----------
-gridToggle.onchange = e => (grid.visible = e.target.checked);
-axesToggle.onchange = e => (axes.visible = e.target.checked);
+gridToggle?.addEventListener('change', e => (grid.visible = e.target.checked));
+axesToggle?.addEventListener('change', e => (axes.visible = e.target.checked));
 
 // Room dimensions
 if (updateDimensionsBtn && roomLengthInput && roomWidthInput && roomHeightInput) {
@@ -232,9 +394,11 @@ if (applyCustomScaleBtn && targetSizeInput) {
       fitToScene(root);
 
       // Update stats
-      statsEl.textContent =
-        `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
-        `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+      if (statsEl) {
+        statsEl.textContent =
+          `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+          `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+      }
     }
   });
 }
@@ -337,9 +501,11 @@ function centerScaleAndFrame(obj) {
 
   grid.position.y = box2.min.y;
 
-  statsEl.textContent =
-    `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
-    `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+  if (statsEl) {
+    statsEl.textContent =
+      `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
+      `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+  }
 }
 
 // ---------- Loaders ----------
@@ -372,7 +538,7 @@ function onLoaded(gltf) {
   }
 }
 async function loadURL(url) {
-  statsEl.textContent = `Loading: ${url}`;
+  if (statsEl) statsEl.textContent = `Loading: ${url}`;
   try {
     const gltf = await loader.loadAsync(url);
     onLoaded(gltf);
@@ -383,10 +549,12 @@ async function loadURL(url) {
 }
 
 // File input / Sample / Drag&Drop
-fileInput.addEventListener('change', async e => {
+roomFileInput?.addEventListener('change', async e => {
   const f = e.target.files?.[0];
   if (!f) return;
-  statsEl.textContent = `Loading local file: ${f.name}`;
+  console.info('[UI]', 'btnImportRoom', f.name);
+  window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportRoom' } }));
+  if (statsEl) statsEl.textContent = `Loading local file: ${f.name}`;
   const url = URL.createObjectURL(f);
   try {
     const gltf = await loader.loadAsync(url);
@@ -399,7 +567,12 @@ fileInput.addEventListener('change', async e => {
   }
 });
 
-loadSample.addEventListener('click', () => loadURL('/models/sample.glb'));
+measureFileInput?.addEventListener('change', e => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  console.info('[UI]', 'btnImportMeasurements', f.name);
+  window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportMeasurements' } }));
+});
 
 container.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; });
 container.addEventListener('drop', async e => {
@@ -425,13 +598,13 @@ let measureOn = false;
 let pA = null, pB = null;
 let markerA = null, markerB = null, line = null;
 
-measureBtn.addEventListener('click', () => {
+measureBtn?.addEventListener('click', () => {
   measureOn = !measureOn;
-  measureBtn.classList.toggle('on', measureOn);
+  measureBtn?.classList.toggle('on', measureOn);
   labelEl.style.display = measureOn && pA && pB ? 'block' : 'none';
 });
 
-clearBtn.addEventListener('click', clearMeasure);
+clearBtn?.addEventListener('click', clearMeasure);
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') clearMeasure();
 });
@@ -510,7 +683,7 @@ renderer.domElement.addEventListener('pointerdown', e => {
     
     // Store measurement for export
     const distance = pA.distanceTo(pB);
-    const units = unitsSel.value;
+    const units = unitsSel?.value;
     measurements.push({
       pointA: { x: pA.x, y: pA.y, z: pA.z },
       pointB: { x: pB.x, y: pB.y, z: pB.z },
@@ -561,7 +734,7 @@ function updateMeasureLabel() {
   labelEl.style.top  = `${y}px`;
 
   const distMeters = pA.distanceTo(pB);
-  labelEl.textContent = unitsSel.value === 'ft'
+  labelEl.textContent = unitsSel?.value === 'ft'
     ? `${(distMeters * mToFt).toFixed(2)} ft`
     : `${distMeters.toFixed(2)} m`;
 }

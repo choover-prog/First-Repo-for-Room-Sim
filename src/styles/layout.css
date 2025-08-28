@@ -1,0 +1,138 @@
+:root {
+  --bg: #0f1115;
+  --bg-panel: #151821;
+  --fg: #e6e6e6;
+  --line: rgba(255,255,255,0.08);
+}
+
+body.theme-dark {
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.layout {
+  display: grid;
+  grid-template-rows: 56px 1fr;
+  grid-template-columns: 280px minmax(0,1fr) 320px;
+  grid-template-areas:
+    "hdr hdr hdr"
+    "left view right";
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.hdr {
+  grid-area: hdr;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.panel {
+  background: var(--bg-panel);
+  border-right: 1px solid var(--line);
+  overflow: hidden;
+}
+.panel--left {
+  grid-area: left;
+  min-width: 0;
+}
+.panel--right {
+  grid-area: right;
+  border-left: 1px solid var(--line);
+  border-right: none;
+  min-width: 0;
+}
+
+.panel__hdr {
+  position: sticky;
+  top: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-panel);
+  z-index: 1;
+}
+
+.panel__body {
+  padding: 10px;
+  overflow: auto;
+  height: calc(100% - 44px);
+}
+
+.viewer {
+  grid-area: view;
+  position: relative;
+  background: #0b0d12;
+}
+.viewer__placeholder {
+  position: absolute;
+  inset: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.4;
+  font-size: 12px;
+}
+
+.icon-btn,
+.panel__toggle {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--fg);
+  cursor: pointer;
+}
+
+.panel__toggle::before {
+  content: "▾";
+  display: block;
+  transform: rotate(0deg);
+  text-align: center;
+}
+#panelLeft.is-collapsed .panel__toggle::before {
+  transform: rotate(-90deg);
+}
+#panelRight.is-collapsed .panel__toggle::before {
+  transform: rotate(90deg);
+}
+
+#btnFullscreen::before {
+  content: "⤢";
+}
+
+#panelLeft.is-collapsed {
+  width: 0 !important;
+  min-width: 0;
+  border-right: none;
+}
+#panelLeft.is-collapsed .panel__body {
+  display: none;
+}
+#panelRight.is-collapsed {
+  width: 0 !important;
+  min-width: 0;
+  border-left: none;
+}
+#panelRight.is-collapsed .panel__body {
+  display: none;
+}
+
+.layout.is-fullscreen {
+  grid-template-columns: 0 minmax(0,1fr) 0;
+}
+.layout.is-fullscreen #panelLeft,
+.layout.is-fullscreen #panelRight {
+  display: none;
+}

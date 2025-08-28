@@ -4,66 +4,43 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Room Viewer</title>
-    <style>
-      :root { color-scheme: dark; }
-      html,body { margin:0; height:100%; background:#0b0d10; color:#e8eaed; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; }
-      #app { position:fixed; inset:0; display:grid; grid-template-columns: 1fr 340px; }
-      #view { position:relative; background:#0b0d10; }
-      #ui { background:#11141a; border-left:1px solid #232832; padding:14px; overflow:auto; }
-      h1 { font-size:20px; margin:0 0 8px; }
-      .row { display:flex; align-items:center; gap:8px; margin:8px 0; }
-      .muted { opacity:.85; font-size:12px; }
-      button,select,input[type="file"] { background:#1a1f29; color:#e8eaed; border:1px solid #30384a; border-radius:6px; padding:6px 10px; }
-      button.primary { background:#2a6bf2; border-color:#2a6bf2; }
-      button.tog.on { background:#2b3a53; border-color:#3d4a63; }
-      .measure-label { position:absolute; pointer-events:none; font-size:12px; background:#1b2330cc; padding:4px 6px; border:1px solid #2a3446; border-radius:6px; transform:translate(-50%,-120%); }
-      .tips { margin-top:8px; font-size:12px; color:#b7c1d1; }
-      .sep { height:1px; background:#232832; margin:12px 0; }
-      .small .muted { opacity:.85 }
-  [data-tip] { text-decoration-style:dotted; }
-    </style>
+    <link rel="stylesheet" href="/src/styles/layout.css" />
   </head>
-  <body>
-    <div id="app">
-      <div id="view">
-        <!-- dynamic canvas goes here -->
-        <div id="measureLabel" class="measure-label" style="display:none">0.00 m</div>
-      </div>
+  <body class="theme-dark">
+    <div id="app" class="layout">
+      <header id="appHeader" class="hdr">
+        <div class="hdr__title">Navigation</div>
+        <button id="btnFullscreen" class="icon-btn" aria-label="Toggle Fullscreen" title="Fullscreen"></button>
+      </header>
 
-      <div id="ui">
-        <h1>Viewer</h1>
-        <div class="muted">Pick a .glb or use the sample.</div>
-
-        <div class="row">
-          <input type="file" id="file" accept=".glb,.gltf" />
-          <button id="loadSample">Load Sample</button>
+      <aside id="panelLeft" class="panel panel--left">
+        <div class="panel__hdr">
+          <div class="panel__title">Controls</div>
+          <button class="panel__toggle" data-target="panelLeft" aria-label="Collapse/Expand"></button>
         </div>
-
-        <div class="row">
-          <label><input type="checkbox" id="gridT" checked /> Grid</label>
-          <label><input type="checkbox" id="axesT" checked /> Axes</label>
+        <div class="panel__body" id="panelLeftBody">
+          <!-- (intentionally empty; feature wiring will come later) -->
         </div>
+      </aside>
 
-        <div class="sep"></div>
+      <main id="view" class="viewer">
+        <!-- three.js canvas is appended here by existing code -->
+        <div class="viewer__placeholder">Viewer</div>
+      </main>
 
-        <div class="row">
-          <button id="measureBtn" class="tog">Measure</button>
-          <select id="units">
-            <option value="m">Meters</option>
-            <option value="ft">Feet</option>
-          </select>
-          <button id="clearMeasure">Clear</button>
+      <aside id="panelRight" class="panel panel--right">
+        <div class="panel__hdr">
+          <div class="panel__title">Equipment</div>
+          <button class="panel__toggle" data-target="panelRight" aria-label="Collapse/Expand"></button>
         </div>
-
-        <div id="stats" class="muted"></div>
-        <div class="tips">
-          Tip: drag & drop a GLB anywhere in the left panel.<br/>
-          Esc = cancel/clear current measurement.
+        <div class="panel__body" id="panelRightBody">
+          <!-- (intentionally empty; feature wiring will come later) -->
         </div>
-      </div>
+      </aside>
     </div>
 
-    <!-- ESM entry -->
+    <!-- keep your existing main app script; add layout after it -->
     <script type="module" src="/src/main.js"></script>
+    <script type="module" src="/src/ui/layout.js"></script>
   </body>
 </html>

@@ -9,16 +9,16 @@ The viewer now renders with a four-pane scaffold that surrounds the 3D scene wit
 - **Top – Global Menu** (`#paneTop`):
   - `btnFullscreenToggle`
   - `btnImportRoom`
-  - `btnExportPNG`
-  - `btnExportJSON`
-  - `btnExportPDF`
-  - `btnRestartOnboarding`
+- `btnExportPNG`
+- `btnExportJSON`
+- `btnExportPDF`
+- `btnRestartOnboarding`
   - `btnGuide`
 - **Left – Visual Overlays** (`#paneLeft`):
-  - `tglLFHeatmap`, `roomL`, `roomW`, `roomH`
-  - `tglReflections`
-  - `tglMicLayout`
-  - `tglSeatMarker`
+- `tglLFHeatmap`, `roomL`, `roomW`, `roomH`
+- `tglReflections`
+- `tglMicLayout`
+- `tglSeatMarker`
 - **Right – Equipment & Cart** (`#paneRight`):
   - `selSpeakerModel`
   - `selAmpModel`
@@ -32,3 +32,20 @@ The viewer now renders with a four-pane scaffold that surrounds the 3D scene wit
   - `btnExportFilters`
 
 Controls emit `ui:action` custom events for easy wiring and panes remember their open/closed state and size.
+
+## Phase-2 Features
+
+### Reflections
+Enable first-reflection markers via `tglReflections`. Uses a simple mirror method to visualize wall hits.
+
+### Room Templates
+Choose presets from `roomTemplateSel` to auto-fill room dimensions from JSON templates.
+
+### Persona Onboarding
+A restartable, step-based flow helps pick personas and tooltip preferences (`btnRestartOnboarding`).
+
+### Mic Layout Export
+Select mic layouts (`micLayoutSel`) and export their positions as JSON (`btnExportMics`).
+
+### PDF Export
+`btnExportPDF` captures the canvas and selections into a basic PDF report.

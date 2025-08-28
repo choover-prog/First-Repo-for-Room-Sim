@@ -15,30 +15,53 @@ function css() {
   document.head.appendChild(style);
 }
 
-export function mountOnboarding(root=document.body) {
+export function mountOnboarding(root = document.body) {
   if (isOnboardingDone()) return;
   css();
   const wrap = document.createElement('div');
   wrap.className = 'ob-backdrop';
-  wrap.innerHTML = `
-    <div class="ob-card">
+
+  // Step 1 - welcome
+  const step1 = document.createElement('div');
+  step1.className = 'ob-card';
+  step1.innerHTML = `
+      <h2 style="margin:0 0 8px 0">Welcome</h2>
+      <div style="opacity:.8">Let’s pick a persona to tailor the app.</div>
+      <div class="ob-row" style="justify-content:flex-end;margin-top:16px">
+        <button class="ob-btn" id="obNext1">Next</button>
+      </div>`;
+
+  // Step 2 - persona selection
+  const step2 = document.createElement('div');
+  step2.className = 'ob-card';
+  step2.innerHTML = `
       <h2 style="margin:0 0 8px 0">Choose how you’ll use the app</h2>
       <div style="opacity:.8">You can change this later in Settings.</div>
       <div class="ob-grid" id="obGrid"></div>
       <div class="ob-row">
         <label><input id="obTips" type="checkbox" checked/> Show tooltips</label>
         <div>
+          <button class="ob-btn" id="obBack">Back</button>
           <button class="ob-btn" id="obSkip">Skip</button>
           <button class="ob-btn" id="obDone">Done</button>
         </div>
       </div>
-      <label style="display:block;margin-top:8px;"><input id="obDont" type="checkbox"/> Don’t show again</label>
-    </div>
-  `;
-  const grid = wrap.querySelector('#obGrid');
-  const tips = wrap.querySelector('#obTips');
-  const dont = wrap.querySelector('#obDont');
+      <label style="display:block;margin-top:8px;"><input id="obDont" type="checkbox"/> Don’t show again</label>`;
 
+  const steps = [step1, step2];
+  let idx = 0;
+  function show() {
+    wrap.innerHTML = '';
+    wrap.appendChild(steps[idx]);
+  }
+  show();
+
+  // Stepper wiring
+  step1.querySelector('#obNext1').onclick = () => { idx = 1; show(); };
+
+  const grid = step2.querySelector('#obGrid');
+  const tips = step2.querySelector('#obTips');
+  const dont = step2.querySelector('#obDont');
   let selected = null;
   personasList().forEach(p => {
     const b = document.createElement('button');
@@ -48,11 +71,12 @@ export function mountOnboarding(root=document.body) {
     grid.appendChild(b);
   });
 
-  wrap.querySelector('#obSkip').onclick = () => {
+  step2.querySelector('#obBack').onclick = () => { idx = 0; show(); };
+  step2.querySelector('#obSkip').onclick = () => {
     setOnboardingDone(dont.checked);
     root.removeChild(wrap);
   };
-  wrap.querySelector('#obDone').onclick = () => {
+  step2.querySelector('#obDone').onclick = () => {
     if (selected) setPersona(selected);
     setTooltipsEnabled(!!tips.checked);
     setOnboardingDone(dont.checked);

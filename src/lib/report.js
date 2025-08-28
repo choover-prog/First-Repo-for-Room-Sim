@@ -2,6 +2,7 @@
  * Report and Export Library
  * Handles exporting room data, heatmaps, and screenshots
  */
+import jsPDF from './jspdf-stub.js';
 
 /**
  * Capture canvas as PNG and return as blob
@@ -169,6 +170,20 @@ export function exportMeasurementsCSV(measurements, filename = 'measurements.csv
   } catch (error) {
     console.error('CSV export failed:', error);
     throw error;
+  }
+}
+
+// Simple PDF export using jsPDF
+export async function exportPDF(canvas, selections = {}, filename = 'room-report.pdf') {
+  try {
+    const pdf = new jsPDF();
+    const img = canvas.toDataURL('image/png');
+    pdf.addImage(img, 'PNG', 10, 10, 180, 100);
+    const lines = Object.entries(selections).map(([k,v]) => `${k}: ${v}`);
+    pdf.text(lines, 10, 120);
+    pdf.save(filename);
+  } catch (e) {
+    console.error('PDF export failed:', e);
   }
 }
 

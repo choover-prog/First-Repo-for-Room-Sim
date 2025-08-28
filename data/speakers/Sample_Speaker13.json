@@ -1,0 +1,7 @@
+{
+  "brand": "Sample",
+  "model": "Speaker13",
+  "sensitivity_db": 90,
+  "f_low_f3_hz": 40,
+  "data_quality": {"tier": "D"}
+}

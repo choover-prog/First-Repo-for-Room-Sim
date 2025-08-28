@@ -7,7 +7,7 @@ import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
-import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
+import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
@@ -765,3 +765,130 @@ window.addEventListener('resize', () => {
     if (pA && pB) updateMeasureLabel();
   }
 })();
+
+// ----- Phase-2 Additions -----
+const roomDims = { L: 5, W: 4, H: 3 };
+const reflectionsGroup = new THREE.Group();
+reflectionsGroup.visible = false;
+scene.add(reflectionsGroup);
+
+function computeReflections() {
+  reflectionsGroup.clear();
+  const listener = new THREE.Vector3(roomDims.L / 2, 1, roomDims.W / 2);
+  const speakers = [
+    new THREE.Vector3(roomDims.L * 0.25, 1, roomDims.W / 2 - 1),
+    new THREE.Vector3(roomDims.L * 0.25, 1, roomDims.W / 2 + 1)
+  ];
+  const walls = [
+    { normal: new THREE.Vector3(1, 0, 0),  point: new THREE.Vector3(0, 0, 0) },
+    { normal: new THREE.Vector3(-1, 0, 0), point: new THREE.Vector3(roomDims.L, 0, 0) },
+    { normal: new THREE.Vector3(0, 0, 1),  point: new THREE.Vector3(0, 0, 0) },
+    { normal: new THREE.Vector3(0, 0, -1), point: new THREE.Vector3(0, 0, roomDims.W) },
+    { normal: new THREE.Vector3(0, 1, 0),  point: new THREE.Vector3(0, 0, 0) },
+    { normal: new THREE.Vector3(0, -1, 0), point: new THREE.Vector3(0, roomDims.H, 0) }
+  ];
+  const geo = new THREE.SphereGeometry(0.1, 8, 8);
+  const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+  speakers.forEach(sp => {
+    walls.forEach(w => {
+      const mirrored = sp.clone().sub(w.normal.clone().multiplyScalar(2 * sp.clone().sub(w.point).dot(w.normal)));
+      const dir = listener.clone().sub(mirrored);
+      const denom = dir.dot(w.normal);
+      if (Math.abs(denom) < 1e-6) return;
+      const t = w.point.clone().sub(mirrored).dot(w.normal) / denom;
+      if (t < 0 || t > 1) return;
+      const hit = mirrored.clone().add(dir.multiplyScalar(t));
+      const m = new THREE.Mesh(geo, mat);
+      m.position.copy(hit);
+      reflectionsGroup.add(m);
+    });
+  });
+}
+
+const micGroup = new THREE.Group();
+micGroup.visible = false;
+scene.add(micGroup);
+const micLayouts = {
+  Default: [ { x: 0, y: 1, z: 0 } ],
+  Stereo: [ { x: -0.2, y: 1, z: 0 }, { x: 0.2, y: 1, z: 0 } ],
+  '5-point': [
+    { x: -0.3, y: 1, z: -0.3 },
+    { x: 0.3, y: 1, z: -0.3 },
+    { x: 0, y: 1, z: 0 },
+    { x: -0.3, y: 1, z: 0.3 },
+    { x: 0.3, y: 1, z: 0.3 }
+  ]
+};
+
+function applyMicLayout(name) {
+  micGroup.clear();
+  const pts = micLayouts[name] || [];
+  const geo = new THREE.SphereGeometry(0.05, 8, 8);
+  const mat = new THREE.MeshBasicMaterial({ color: 0x00aaff });
+  pts.forEach(p => {
+    const m = new THREE.Mesh(geo, mat);
+    m.position.set(p.x, p.y, p.z);
+    micGroup.add(m);
+  });
+}
+
+// Populate mic layout dropdown
+(function initMicLayouts() {
+  const sel = document.getElementById('micLayoutSel');
+  if (!sel) return;
+  sel.innerHTML = Object.keys(micLayouts).map(n => `<option value="${n}">${n}</option>`).join('');
+})();
+
+// Load room templates
+(async function initRoomTemplates() {
+  try {
+    const res = await fetch('/data/templates/manifest.json');
+    const list = await res.json();
+    const sel = document.getElementById('roomTemplateSel');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Default</option>' +
+      list.map(f => `<option value="${f}">${f.replace('.json','').replace(/_/g,' ')}</option>`).join('');
+    sel.addEventListener('change', async e => {
+      const file = e.target.value;
+      if (!file) return;
+      const tpl = await (await fetch('/data/templates/' + file)).json();
+      document.getElementById('roomL').value = tpl.length;
+      document.getElementById('roomW').value = tpl.width;
+      document.getElementById('roomH').value = tpl.height;
+      window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'roomL', payload: tpl.length } }));
+      window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'roomW', payload: tpl.width } }));
+      window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'roomH', payload: tpl.height } }));
+    });
+  } catch (e) {
+    console.warn('Template init failed', e);
+  }
+})();
+
+window.addEventListener('ui:action', async e => {
+  const { id, payload } = e.detail || {};
+  switch (id) {
+    case 'roomL': roomDims.L = parseFloat(payload) || roomDims.L; break;
+    case 'roomW': roomDims.W = parseFloat(payload) || roomDims.W; break;
+    case 'roomH': roomDims.H = parseFloat(payload) || roomDims.H; break;
+    case 'tglReflections':
+      reflectionsGroup.visible = !!payload;
+      if (payload) computeReflections();
+      break;
+    case 'tglMicLayout':
+      micGroup.visible = !!payload;
+      break;
+    case 'micLayoutSel':
+      applyMicLayout(payload);
+      break;
+    case 'btnExportMics':
+      downloadJSON(micGroup.children.map(m => ({ x: m.position.x, y: m.position.y, z: m.position.z })), 'mic-layout.json');
+      break;
+    case 'btnExportPDF':
+      await exportPDF(renderer.domElement, { persona: getPersona() });
+      break;
+    case 'btnRestartOnboarding':
+      setOnboardingDone(false);
+      mountOnboarding(document.body);
+      break;
+  }
+});

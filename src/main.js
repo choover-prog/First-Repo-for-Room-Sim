@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
+import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
@@ -100,6 +101,8 @@ scene.add(grid);
 
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
+
+mountObjectToolbar({ scene, camera, controls, renderer });
 
 // Initialize new systems
 let lfHeatmap = null;

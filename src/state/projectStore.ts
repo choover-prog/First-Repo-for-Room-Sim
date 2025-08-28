@@ -17,6 +17,8 @@ export type Command =
   | { type: 'addSpeaker'; model: string; pos?: Vec3; rotY?: number }
   | { type: 'selectSpeaker'; id: string | null }
   | { type: 'moveSpeaker'; id: string; pos: Vec3 }
+  | { type: 'rotateSpeaker'; id: string; deg?: number; setTo?: number }
+  | { type: 'duplicateSpeaker'; id: string }
   | { type: 'deleteSpeaker'; id: string };
 
 const VERSION = '1';
@@ -65,6 +67,27 @@ function reduce(project: Project, cmd: Command): Project {
         s.id === cmd.id ? { ...s, pos: { ...cmd.pos, y: 0 } } : s
       );
       return { ...project, speakers };
+    }
+    case 'rotateSpeaker': {
+      const speakers = project.speakers.map((s) =>
+        s.id === cmd.id
+          ? { ...s, rotY: cmd.setTo !== undefined ? cmd.setTo : (s.rotY + (cmd.deg || 0)) }
+          : s
+      );
+      return { ...project, speakers };
+    }
+    case 'duplicateSpeaker': {
+      const src = project.speakers.find((s) => s.id === cmd.id);
+      if (src) {
+        const id = uuidv4();
+        const speaker: Speaker = {
+          ...src,
+          id,
+          pos: { ...src.pos, x: src.pos.x + 0.2 },
+        };
+        return { speakers: [...project.speakers, speaker], selectedId: id };
+      }
+      return project;
     }
     case 'deleteSpeaker': {
       const speakers = project.speakers.filter((s) => s.id !== cmd.id);

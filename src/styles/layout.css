@@ -51,3 +51,5 @@ body { background:var(--bg); color:var(--fg); margin:0; }
 /* Optional placeholder text style if region empty */
 .region__placeholder { opacity:0.4; font-size:12px; padding:10px; }
 
+.viewer-toolbar button.active { outline:2px solid #4da3ff; }
+

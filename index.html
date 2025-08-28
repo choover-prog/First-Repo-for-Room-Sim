@@ -68,6 +68,15 @@
               Esc = cancel/clear current measurement.
             </div>
           </div>
+          <div class="group" id="objControlsSection">
+            <div class="group__title">Object Controls</div>
+            <label style="display:flex;gap:6px;align-items:center;">
+              <input id="chkSnap" type="checkbox" checked />
+              <span>Snap</span>
+              <input id="snapSize" type="number" step="0.001" min="0" value="0.0762" style="width:90px;" />
+              <span class="muted">m</span>
+            </label>
+          </div>
         </div>
       </aside>
 
@@ -75,6 +84,26 @@
         <!-- dynamic canvas goes here -->
         <div id="measureLabel" class="measure-label" style="display:none">0.00 m</div>
       </div>
+
+      <section id="panelBottom">
+        <div class="panel__hdr">
+          <div class="panel__title">Viewer Controls</div>
+          <button class="panel__toggle" data-target="panelBottom" aria-label="Collapse/Expand"></button>
+        </div>
+        <div class="panel__body" id="panelBottomBody">
+          <div id="objToolbar" class="viewer-toolbar" data-role="viewer-toolbar">
+            <button id="toolSelect">Select</button>
+            <button id="toolTranslate">Move (W)</button>
+            <button id="toolRotate">Rotate (E)</button>
+            <span class="sep"></span>
+            <button id="btnDuplicate">Duplicate (Ctrl/Cmd+D)</button>
+            <button id="btnDeleteObj">Delete (Del)</button>
+            <span class="sep"></span>
+            <button id="btnUndoObj">Undo</button>
+            <button id="btnRedoObj">Redo</button>
+          </div>
+        </div>
+      </section>
 
       <aside id="panelRight">
         <div class="panel__hdr">
@@ -89,5 +118,6 @@
     <script type="module" src="/src/main.js"></script>
     <script type="module" src="/src/ui/layout.js"></script>
     <script type="module" src="/src/ui/layout-enforce.js"></script>
+    <script type="module" src="/src/ui/toolbar-objects.js"></script>
   </body>
 </html>

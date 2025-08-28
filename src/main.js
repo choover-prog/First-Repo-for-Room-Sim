@@ -17,6 +17,7 @@ import { mount as mountRightPane } from './ui/panes/RightPane.js';
 import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
 import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
+import LayoutManager from './ui/LayoutManager.js';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -97,6 +98,32 @@ mountRightPane(document.getElementById('paneRight'));
 mountEquipmentPanel();
 mountBottomPane(document.getElementById('paneBottom'));
 
+LayoutManager.init(document);
+['top','left','right','bottom'].forEach((side) => {
+  const el = document.querySelector(`.pane[data-pane-id="${side}"]`);
+  el?.querySelector('.btn-collapse')?.addEventListener('click', () => LayoutManager.setCollapsed(side, true));
+  el?.querySelector('.btn-fullscreen')?.addEventListener('click', () => LayoutManager.setFullscreen(side, true));
+});
+
+const restoreBtn = document.getElementById('btnRestorePane');
+restoreBtn?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const st = LayoutManager.getState();
+    if (st.fullscreenId) LayoutManager.setFullscreen(st.fullscreenId, false);
+  }
+});
+
+document.addEventListener('fullscreenchange', () => {
+  const inFS = !!document.fullscreenElement;
+  document.body.classList.toggle('app-has-fullscreen', inFS);
+  if (!inFS) {
+    const fsPane = document.querySelector('.pane.is-fullscreen');
+    if (fsPane) LayoutManager.setFullscreen(fsPane.dataset.paneId || fsPane.id, false);
+  }
+});
+
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');
   const left = document.getElementById('paneLeft');
@@ -125,31 +152,16 @@ function verifyPaneButtons() {
 }
 verifyPaneButtons();
 
-function savePane(side, partial) {
-  const state = getPaneState();
-  state[side] = { ...(state[side] || {}), ...partial };
-  setPaneState(state);
-}
-
 function applyPaneState(state) {
   ['top', 'left', 'right', 'bottom'].forEach((side) => {
     const el = document.getElementById('pane' + side.charAt(0).toUpperCase() + side.slice(1));
     if (!el) return;
-    const s = state[side] || { open: true };
-    el.classList.toggle('collapsed', s.open === false);
+    const s = state[side] || {};
     if (s.size) {
       if (side === 'left' || side === 'right') el.style.width = s.size + 'px';
       else el.style.height = s.size + 'px';
     }
   });
-}
-
-function togglePane(paneId) {
-  const side = paneId.replace('pane', '').toLowerCase();
-  const el = document.getElementById(paneId);
-  if (!el) return;
-  const collapsed = el.classList.toggle('collapsed');
-  savePane(side, { open: !collapsed });
 }
 
 function resetLayout() {
@@ -169,26 +181,9 @@ function resetLayout() {
 
 applyPaneState(getPaneState());
 
-['Top', 'Left', 'Right', 'Bottom'].forEach((side) => {
-  const paneId = 'pane' + side;
-  document.getElementById(`btnCollapse${side}`)?.addEventListener('click', () => togglePane(paneId));
-  const paneEl = document.getElementById(paneId);
-  paneEl?.addEventListener('click', (e) => {
-    if (!paneEl.classList.contains('collapsed')) return;
-    if (e.target === paneEl || e.target.classList.contains('rail-label')) {
-      togglePane(paneId);
-    }
-  });
-});
-
 document.getElementById('btnResetLayout')?.addEventListener('click', resetLayout);
 
 document.addEventListener('keydown', (e) => {
-  if (e.shiftKey && !e.ctrlKey && !e.altKey) {
-    const map = { T: 'paneTop', L: 'paneLeft', R: 'paneRight', B: 'paneBottom' };
-    const k = e.key.toUpperCase();
-    if (map[k]) { e.preventDefault(); togglePane(map[k]); }
-  }
   if (e.ctrlKey && e.altKey && e.key === '0') {
     e.preventDefault();
     resetLayout();

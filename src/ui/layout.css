@@ -1,25 +1,35 @@
 .ui-host {
-  position: fixed;
-  inset: 0;
+  display: grid;
+  grid-template-areas:
+    "top top top"
+    "left view right"
+    "bottom bottom bottom";
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
+  height: 100%;
+  width: 100%;
   pointer-events: none;
 }
 
+#paneTop   { grid-area: top; }
+#paneLeft  { grid-area: left; }
+#paneRight { grid-area: right; }
+#paneBottom{ grid-area: bottom; }
+#view      { grid-area: view; position: relative; }
+
 .pane {
-  position: absolute;
+  position: relative;
   background: #11141aee;
   color: #e8eaed;
   pointer-events: auto;
   font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
   display: flex;
   flex-direction: column;
-  z-index: 10;
 }
 
 .pane.top {
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 60px;
+  z-index: 3;
+  height: var(--topPaneHeight,60px);
 }
 
 .pane.top .project-group {
@@ -30,24 +40,20 @@
 }
 
 .pane.left {
-  top: 60px;
-  bottom: 60px;
-  left: 0;
-  width: 240px;
+  z-index: 2;
+  width: var(--leftPaneWidth,240px);
+  margin-top: var(--topPaneHeight,48px);
 }
 
 .pane.right {
-  top: 60px;
-  bottom: 60px;
-  right: 0;
-  width: 240px;
+  z-index: 2;
+  width: var(--rightPaneWidth,240px);
+  margin-top: var(--topPaneHeight,48px);
 }
 
 .pane.bottom {
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 80px;
+  z-index: 2;
+  height: var(--bottomPaneHeight,80px);
 }
 
 .pane.collapsed {

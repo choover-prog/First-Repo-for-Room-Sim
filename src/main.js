@@ -20,6 +20,10 @@ import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
+  document.querySelectorAll('header, footer').forEach((node) => {
+    console.warn('[UI] Removing unexpected container:', node.tagName);
+    node.remove();
+  });
   const seen = new Set();
   document.querySelectorAll('.pane').forEach((node) => {
     const id = node.id;
@@ -60,9 +64,9 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
-const app         = document.getElementById('app');
-const btnFullscreen = document.getElementById('btnFullscreen');
-installFullscreenGuard(app);
+const app         = document.getElementById('uiHost');
+const btnFullscreen = document.getElementById('btnFullscreenToggle');
+if (app) installFullscreenGuard(app);
 installEscFullscreenFix();
 btnFullscreen?.addEventListener('click', async () => {
   if (!document.fullscreenElement) {
@@ -84,6 +88,22 @@ mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
 mountBottomPane(document.getElementById('paneBottom'));
+
+function verifyPaneButtons() {
+  const top = document.getElementById('paneTop');
+  const bottom = document.getElementById('paneBottom');
+  if (top) {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide'].forEach(id => {
+      if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
+    });
+  }
+  if (bottom) {
+    ['btnChat','btnCalAssistant','btnImportMeasurements','btnExportFilters','micLayoutSel','btnExportMics'].forEach(id => {
+      if (!bottom.querySelector('#' + id)) console.warn('[UI] Bottom pane missing', id);
+    });
+  }
+}
+verifyPaneButtons();
 
 function savePane(side, partial) {
   const state = getPaneState();
@@ -269,8 +289,8 @@ currentPersona = { tooltipsEnabled: isTooltipsEnabled() };
 badgeManager = new BadgeManager(currentPersona);
 
 // ---------- Utility UI ----------
-gridToggle.onchange = e => (grid.visible = e.target.checked);
-axesToggle.onchange = e => (axes.visible = e.target.checked);
+gridToggle?.addEventListener('change', e => (grid.visible = e.target.checked));
+axesToggle?.addEventListener('change', e => (axes.visible = e.target.checked));
 
 // Room dimensions
 if (updateDimensionsBtn && roomLengthInput && roomWidthInput && roomHeightInput) {
@@ -352,9 +372,11 @@ if (applyCustomScaleBtn && targetSizeInput) {
       fitToScene(root);
 
       // Update stats
-      statsEl.textContent =
-        `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
-        `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+      if (statsEl) {
+        statsEl.textContent =
+          `Size: ${size.x.toFixed(2)}×${size.y.toFixed(2)}×${size.z.toFixed(2)} m  |  ` +
+          `${(size.x*mToFt).toFixed(2)}×${(size.y*mToFt).toFixed(2)}×${(size.z*mToFt).toFixed(2)} ft`;
+      }
     }
   });
 }
@@ -457,9 +479,11 @@ function centerScaleAndFrame(obj) {
 
   grid.position.y = box2.min.y;
 
-  statsEl.textContent =
-    `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
-    `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+  if (statsEl) {
+    statsEl.textContent =
+      `Size: ${sz.x.toFixed(2)}×${sz.y.toFixed(2)}×${sz.z.toFixed(2)} m  |  ` +
+      `${(sz.x*mToFt).toFixed(2)}×${(sz.y*mToFt).toFixed(2)}×${(sz.z*mToFt).toFixed(2)} ft`;
+  }
 }
 
 // ---------- Loaders ----------
@@ -492,7 +516,7 @@ function onLoaded(gltf) {
   }
 }
 async function loadURL(url) {
-  statsEl.textContent = `Loading: ${url}`;
+  if (statsEl) statsEl.textContent = `Loading: ${url}`;
   try {
     const gltf = await loader.loadAsync(url);
     onLoaded(gltf);
@@ -508,7 +532,7 @@ roomFileInput?.addEventListener('change', async e => {
   if (!f) return;
   console.info('[UI]', 'btnImportRoom', f.name);
   window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportRoom' } }));
-  statsEl.textContent = `Loading local file: ${f.name}`;
+  if (statsEl) statsEl.textContent = `Loading local file: ${f.name}`;
   const url = URL.createObjectURL(f);
   try {
     const gltf = await loader.loadAsync(url);
@@ -552,13 +576,13 @@ let measureOn = false;
 let pA = null, pB = null;
 let markerA = null, markerB = null, line = null;
 
-measureBtn.addEventListener('click', () => {
+measureBtn?.addEventListener('click', () => {
   measureOn = !measureOn;
-  measureBtn.classList.toggle('on', measureOn);
+  measureBtn?.classList.toggle('on', measureOn);
   labelEl.style.display = measureOn && pA && pB ? 'block' : 'none';
 });
 
-clearBtn.addEventListener('click', clearMeasure);
+clearBtn?.addEventListener('click', clearMeasure);
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') clearMeasure();
 });
@@ -637,7 +661,7 @@ renderer.domElement.addEventListener('pointerdown', e => {
     
     // Store measurement for export
     const distance = pA.distanceTo(pB);
-    const units = unitsSel.value;
+    const units = unitsSel?.value;
     measurements.push({
       pointA: { x: pA.x, y: pA.y, z: pA.z },
       pointB: { x: pB.x, y: pB.y, z: pB.z },
@@ -688,7 +712,7 @@ function updateMeasureLabel() {
   labelEl.style.top  = `${y}px`;
 
   const distMeters = pA.distanceTo(pB);
-  labelEl.textContent = unitsSel.value === 'ft'
+  labelEl.textContent = unitsSel?.value === 'ft'
     ? `${(distMeters * mToFt).toFixed(2)} ft`
     : `${distMeters.toFixed(2)} m`;
 }

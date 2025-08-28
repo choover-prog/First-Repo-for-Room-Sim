@@ -25,7 +25,7 @@ export function mount(el) {
     makeButton('btnExportPDF', 'Export PDF'),
     makeButton('btnRestartOnboarding', 'Restart Onboarding'),
     makeButton('btnGuide', 'Guide'),
-    makeButton('btnResetLayout', 'Reset Layout', 'Reset pane sizes & visibility')
+    makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')
   );
   content.appendChild(sec);
 }

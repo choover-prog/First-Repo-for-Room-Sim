@@ -10,6 +10,13 @@ import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
+import './ui/layout.css';
+import { mount as mountTopPane } from './ui/panes/TopPane.js';
+import { mount as mountLeftPane } from './ui/panes/LeftPane.js';
+import { mount as mountRightPane } from './ui/panes/RightPane.js';
+import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
+import { getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
+import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
 
 const mToFt = 3.28084;
 
@@ -27,6 +34,7 @@ const labelEl     = document.getElementById('measureLabel');
 const app         = document.getElementById('app');
 const btnFullscreen = document.getElementById('btnFullscreen');
 installFullscreenGuard(app);
+installEscFullscreenFix();
 btnFullscreen?.addEventListener('click', async () => {
   if (!document.fullscreenElement) {
     try {
@@ -38,9 +46,15 @@ btnFullscreen?.addEventListener('click', async () => {
       console.warn('Failed to enter fullscreen', e);
     }
   } else {
-    window.exitFS?.();
+    exitFullscreenSafe();
   }
 });
+
+// Mount new UI panes
+mountTopPane(document.getElementById('paneTop'));
+mountLeftPane(document.getElementById('paneLeft'));
+mountRightPane(document.getElementById('paneRight'));
+mountBottomPane(document.getElementById('paneBottom'));
 
 // New UI elements
 const roomLengthInput = document.getElementById('roomLength');

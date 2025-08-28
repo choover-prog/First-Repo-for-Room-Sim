@@ -1,0 +1,85 @@
+.ui-host {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pane {
+  position: absolute;
+  background: #11141aee;
+  color: #e8eaed;
+  pointer-events: auto;
+  font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  display: flex;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.pane.top {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+}
+
+.pane.left {
+  top: 60px;
+  bottom: 60px;
+  left: 0;
+  width: 240px;
+}
+
+.pane.right {
+  top: 60px;
+  bottom: 60px;
+  right: 0;
+  width: 240px;
+}
+
+.pane.bottom {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80px;
+}
+
+.pane.collapsed {
+  display: none;
+}
+
+.pane .handle {
+  position: absolute;
+  background: transparent;
+}
+
+.pane.left .handle {
+  top: 0;
+  right: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.pane.right .handle {
+  top: 0;
+  left: 0;
+  width: 5px;
+  height: 100%;
+  cursor: ew-resize;
+}
+
+.pane.bottom .handle {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  cursor: ns-resize;
+}
+
+.pane.top .handle {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  cursor: ns-resize;
+}

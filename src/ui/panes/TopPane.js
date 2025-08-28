@@ -1,4 +1,4 @@
-import { makeButton, mountSection, initPane } from '../controls.js';
+import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js';
 
 export function mount(el) {
   if (!el) return;
@@ -17,15 +17,16 @@ export function mount(el) {
   );
   content.appendChild(proj);
 
-  const sec = mountSection();
-  sec.append(
-    makeButton('btnFullscreenToggle', 'Fullscreen', 'Toggle Fullscreen'),
-    makeButton('btnExportPNG', 'Export PNG'),
-    makeButton('btnExportJSON', 'Export JSON'),
-    makeButton('btnExportPDF', 'Export PDF'),
-    makeButton('btnRestartOnboarding', 'Restart Onboarding'),
-    makeButton('btnGuide', 'Guide'),
-    makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')
-  );
-  content.appendChild(sec);
+    const sec = mountSection();
+    sec.append(
+      makeButton('btnFullscreenToggle', 'Fullscreen', 'Toggle Fullscreen'),
+      makeButton('btnExportPNG', 'Export PNG'),
+      makeButton('btnExportJSON', 'Export JSON'),
+      makeButton('btnExportPDF', 'Export PDF'),
+      makeDropdown('roomTemplateSel', ['Default']),
+      makeButton('btnRestartOnboarding', 'Restart Onboarding'),
+      makeButton('btnGuide', 'Guide'),
+      makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')
+    );
+    content.appendChild(sec);
 }

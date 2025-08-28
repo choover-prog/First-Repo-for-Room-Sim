@@ -56,7 +56,14 @@ if (panes.length !== 4) console.warn('[UI] Expected 4 panes, found', panes.lengt
 const mToFt = 3.28084;
 
 // DOM
-const container   = document.getElementById('view');
+let container   = document.getElementById('view');
+if (!container) {
+  console.warn('[UI] #view container missing, creating one');
+  container = document.createElement('div');
+  container.id = 'view';
+  container.className = 'viewer';
+  document.getElementById('uiHost')?.appendChild(container);
+}
 const statsEl     = document.getElementById('stats');
 const gridToggle  = document.getElementById('gridT');
 const axesToggle  = document.getElementById('axesT');
@@ -87,14 +94,27 @@ btnFullscreen?.addEventListener('click', async () => {
 mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
+mountEquipmentPanel();
 mountBottomPane(document.getElementById('paneBottom'));
 
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');
+  const left = document.getElementById('paneLeft');
+  const right = document.getElementById('paneRight');
   const bottom = document.getElementById('paneBottom');
   if (top) {
-    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide'].forEach(id => {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel'].forEach(id => {
       if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
+    });
+  }
+  if (left) {
+    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker'].forEach(id => {
+      if (!left.querySelector('#' + id)) console.warn('[UI] Left pane missing', id);
+    });
+  }
+  if (right) {
+    ['selSpeakerModel','selAmpModel','btnAddToCart','btnCart'].forEach(id => {
+      if (!right.querySelector('#' + id)) console.warn('[UI] Right pane missing', id);
     });
   }
   if (bottom) {
@@ -141,6 +161,9 @@ function resetLayout() {
   };
   setPaneState(defaults);
   applyPaneState(defaults);
+  renderer.setSize(container.clientWidth, container.clientHeight);
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
   console.info('[UI] Layout reset');
 }
 
@@ -219,7 +242,6 @@ const resetViewBtn = document.getElementById('resetView');
   div.querySelector('#resetOnb').onclick = ()=> mountOnboarding(document.body);
 })();
 
-mountEquipmentPanel(document.getElementById('ui'));
 mountOnboarding(document.body);
 
 // Renderer / Scene / Camera

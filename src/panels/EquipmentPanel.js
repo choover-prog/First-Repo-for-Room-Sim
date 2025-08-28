@@ -24,7 +24,12 @@ function tipAttr(key, text) {
   return isTooltipsEnabled() ? `data-tip="${key}" title="${text.replace(/"/g,'&quot;')}"` : '';
 }
 
-export function mountEquipmentPanel(container) {
+export function mountEquipmentPanel() {
+  const rightPane = document.getElementById('paneRight');
+  if (!rightPane) {
+    console.error('[UI] paneRight not found');
+    return;
+  }
   const personaCfg = getPersonaConfig();
   const root = el(`
     <div style="margin-top:12px">
@@ -46,7 +51,7 @@ export function mountEquipmentPanel(container) {
       <div id="eqpWarn" class="muted" style="color:#ffb3b3"></div>
     </div>
   `);
-  container.appendChild(root);
+  rightPane.appendChild(root);
 
   const spSel  = root.querySelector('#spSel');
   const ampSel = root.querySelector('#ampSel');

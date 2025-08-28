@@ -9,6 +9,7 @@ export function createSpeakerMesh(data: Speaker): SpeakerMesh {
   const mesh = new THREE.Mesh(geom, mat) as SpeakerMesh;
   mesh.position.set(data.pos.x, data.pos.y, data.pos.z);
   mesh.rotation.y = data.rotY;
+  mesh.userData = { id: data.id, kind: 'speaker' };
 
   const edges = new THREE.LineSegments(
     new THREE.EdgesGeometry(geom),

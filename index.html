@@ -22,48 +22,120 @@
       .small .muted { opacity:.85 }
   [data-tip] { text-decoration-style:dotted; }
     </style>
+    <link rel="stylesheet" href="/src/styles/layout.css" />
   </head>
   <body>
     <div id="app">
+      <header id="appHeader">
+        <div class="panel__hdr">
+          <div class="panel__title">Navigation</div>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="appHeader" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="appHeader" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+            <button id="btnFullscreen" title="Fullscreen" aria-label="Fullscreen">⛶</button>
+          </div>
+        </div>
+        <div class="panel__body" id="appHeaderBody"></div>
+      </header>
+
+      <aside id="panelLeft">
+        <div class="panel__hdr">
+          <div class="panel__title">Controls</div>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelLeft" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelLeft" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
+        </div>
+        <div class="panel__body" id="panelLeftBody">
+          <div id="ui">
+            <h1>Viewer</h1>
+            <div class="muted">Pick a .glb or use the sample.</div>
+
+            <div class="row">
+              <input type="file" id="file" accept=".glb,.gltf" />
+              <button id="loadSample">Load Sample</button>
+            </div>
+
+            <div class="row">
+              <label><input type="checkbox" id="gridT" checked /> Grid</label>
+              <label><input type="checkbox" id="axesT" checked /> Axes</label>
+            </div>
+
+            <div class="sep"></div>
+
+            <div class="row">
+              <button id="measureBtn" class="tog">Measure</button>
+              <select id="units">
+                <option value="m">Meters</option>
+                <option value="ft">Feet</option>
+              </select>
+              <button id="clearMeasure">Clear</button>
+            </div>
+
+            <div id="stats" class="muted"></div>
+            <div class="tips">
+              Tip: drag & drop a GLB anywhere in the left panel.<br/>
+              Esc = cancel/clear current measurement.
+            </div>
+          </div>
+          <div class="group" id="objControlsSection">
+            <div class="group__title">Object Controls</div>
+            <label style="display:flex;gap:6px;align-items:center;">
+              <input id="chkSnap" type="checkbox" checked />
+              <span>Snap</span>
+              <input id="snapSize" type="number" step="0.001" min="0" value="0.0762" style="width:90px;" />
+              <span class="muted">m</span>
+            </label>
+          </div>
+        </div>
+      </aside>
+
       <div id="view">
         <!-- dynamic canvas goes here -->
         <div id="measureLabel" class="measure-label" style="display:none">0.00 m</div>
       </div>
 
-      <div id="ui">
-        <h1>Viewer</h1>
-        <div class="muted">Pick a .glb or use the sample.</div>
-
-        <div class="row">
-          <input type="file" id="file" accept=".glb,.gltf" />
-          <button id="loadSample">Load Sample</button>
+      <section id="panelBottom">
+        <div class="panel__hdr">
+          <div class="panel__title">Viewer Controls</div>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelBottom" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelBottom" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
         </div>
-
-        <div class="row">
-          <label><input type="checkbox" id="gridT" checked /> Grid</label>
-          <label><input type="checkbox" id="axesT" checked /> Axes</label>
+        <div class="panel__body" id="panelBottomBody">
+          <div id="objToolbar" class="viewer-toolbar" data-role="viewer-toolbar">
+            <button id="toolSelect">Select</button>
+            <button id="toolTranslate">Move (W)</button>
+            <button id="toolRotate">Rotate (E)</button>
+            <span class="sep"></span>
+            <button id="btnDuplicate">Duplicate (Ctrl/Cmd+D)</button>
+            <button id="btnDeleteObj">Delete (Del)</button>
+            <span class="sep"></span>
+            <button id="btnUndoObj">Undo</button>
+            <button id="btnRedoObj">Redo</button>
+          </div>
         </div>
+      </section>
 
-        <div class="sep"></div>
-
-        <div class="row">
-          <button id="measureBtn" class="tog">Measure</button>
-          <select id="units">
-            <option value="m">Meters</option>
-            <option value="ft">Feet</option>
-          </select>
-          <button id="clearMeasure">Clear</button>
+      <aside id="panelRight">
+        <div class="panel__hdr">
+          <div class="panel__title">Equipment</div>
+          <div class="panel__actions">
+            <button class="panel__collapse" data-target="panelRight" title="Collapse" aria-label="Collapse">▾</button>
+            <button class="panel__fs" data-target="panelRight" title="Fullscreen" aria-label="Fullscreen">⤢</button>
+          </div>
         </div>
-
-        <div id="stats" class="muted"></div>
-        <div class="tips">
-          Tip: drag & drop a GLB anywhere in the left panel.<br/>
-          Esc = cancel/clear current measurement.
-        </div>
-      </div>
+        <div class="panel__body" id="panelRightBody"></div>
+      </aside>
     </div>
 
     <!-- ESM entry -->
     <script type="module" src="/src/main.js"></script>
-  </body>
-</html>
+    <script type="module" src="/src/ui/layout-enforce.js"></script>
+    <script type="module" src="/src/ui/toolbar-objects.js"></script>
+    <script type="module" src="/src/ui/panels.js"></script>
+    <script type="module" src="/src/ui/resize-panels.js"></script>
+    <script type="module" src="/src/ui/layout.js"></script>
+    </body>
+  </html>

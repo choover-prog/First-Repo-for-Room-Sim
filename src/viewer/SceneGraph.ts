@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { projectStore } from '../state/projectStore';
 import { createSpeakerMesh, SpeakerMesh } from '../three/objects/SpeakerMesh';
+import { registerSelectable, unregisterSelectable } from '../three/controls/objectControls.js';
 
 export class SceneGraph {
   private scene: THREE.Scene;
@@ -19,6 +20,7 @@ export class SceneGraph {
     // remove missing
     for (const [id, mesh] of this.meshes) {
       if (!ids.has(id)) {
+        unregisterSelectable(mesh);
         this.scene.remove(mesh);
         this.meshes.delete(id);
       }
@@ -29,8 +31,10 @@ export class SceneGraph {
       let mesh = this.meshes.get(sp.id);
       if (!mesh) {
         mesh = createSpeakerMesh(sp);
+        mesh.userData = { id: sp.id, kind: 'speaker' };
         this.meshes.set(sp.id, mesh);
         this.scene.add(mesh);
+        registerSelectable(mesh);
       } else {
         mesh.position.set(sp.pos.x, sp.pos.y, sp.pos.z);
         mesh.rotation.y = sp.rotY;

@@ -14,6 +14,7 @@ import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapDat
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
+import { fitCameraToObject } from './view/fitCamera.js';
 import { mount as mountTopPane } from './ui/panes/TopPane.js';
 import { mount as mountLeftPane } from './ui/panes/LeftPane.js';
 import { mount as mountRightPane } from './ui/panes/RightPane.js';
@@ -455,21 +456,13 @@ function applyCustomScale(obj, targetSize = 8) {
   }
 }
 
-// Snap zoom function for better initial view
+// Snap zoom function using new helper
 function fitToScene(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
-  const sphere = box.getBoundingSphere(new THREE.Sphere());
-  const fov = THREE.MathUtils.degToRad(camera.fov);
-  const dist = sphere.radius / Math.sin(fov / 2);
-  camera.position.set(
-    sphere.center.x + dist,
-    sphere.center.y + dist,
-    sphere.center.z + dist
-  );
-  controls.target.copy(sphere.center);
-  controls.update();
-  const camDist = camera.position.distanceTo(sphere.center);
-  console.log(`Fit to scene - radius: ${sphere.radius.toFixed(2)}m, camera distance: ${camDist.toFixed(2)}m`);
+  const info = fitCameraToObject(camera, obj, controls, { margin: 1.4 });
+  if (info) {
+    const camDist = camera.position.distanceTo(info.center);
+    console.log(`Fit to scene - maxDim: ${info.maxDim.toFixed(2)}m, camera distance: ${camDist.toFixed(2)}m`);
+  }
 }
 
 function buildPickables(obj) {
@@ -503,11 +496,6 @@ function centerScaleAndFrame(obj) {
 
   // Position camera to frame the object
   fitToScene(obj);
-
-  // Update camera near/far planes
-  camera.near = Math.max(0.01, Math.min(sz.x, sz.y, sz.z) / 200);
-  camera.far  = Math.max(1000, Math.max(sz.x, sz.y, sz.z) * 50);
-  camera.updateProjectionMatrix();
 
   grid.position.y = box2.min.y;
 

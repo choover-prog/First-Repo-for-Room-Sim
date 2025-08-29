@@ -24,6 +24,7 @@ import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEna
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
 import LayoutManager from './ui/LayoutManager.js';
 import { mountBottomToolbar } from './panels/BottomToolbar.js';
+import { initLayout } from './ui/layout.ts';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -102,11 +103,12 @@ btnFullscreen?.addEventListener('click', async () => {
 mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
-mountEquipmentPanel();
-mountSpinoramaImport();
-mountBottomToolbar();
+  mountEquipmentPanel();
+  mountSpinoramaImport();
+  mountBottomToolbar();
+  initLayout();
 
-LayoutManager.init(document);
+  LayoutManager.init(document);
 ['top','left','right','bottom'].forEach((side) => {
   const el = document.querySelector(`.pane[data-pane-id="${side}"]`);
   const collapseBtn = el?.querySelector('.btn-collapse');

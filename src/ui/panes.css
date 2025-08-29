@@ -1,5 +1,9 @@
 //------------------------------------------------------------
 /* Layout only; keep existing sizing if you already use a grid system */
+#paneTop { z-index: 4; pointer-events: auto; }
+#paneBottom { z-index: 4; pointer-events: auto; }
+.pane-handle { user-select: none; touch-action: none; }
+.restore-panes-btn { position: absolute; right: 10px; top: 10px; z-index: 6; }
 
 /* Local utility styles */
 .section { margin: 8px 10px; }

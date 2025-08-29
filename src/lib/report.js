@@ -3,6 +3,7 @@
  * Handles exporting room data, heatmaps, and screenshots
  */
 import jsPDF from './jspdf-stub.js';
+import { getSelectedEquipment } from '../panels/EquipmentPanel.js';
 
 // Hooks allow modules to contribute extra data to exports
 const exportHooks = [];
@@ -20,6 +21,11 @@ function runExportHooks(target) {
     }
   });
 }
+
+registerExportHook(() => {
+  const sel = typeof getSelectedEquipment === 'function' ? getSelectedEquipment() : null;
+  return { equipment: sel ? { speakerIds: sel.speakers?.map(s => s.id) || [], ampIds: sel.amps?.map(a => a.id) || [] } : {} };
+});
 
 /**
  * Capture canvas as PNG and return as blob
@@ -199,6 +205,12 @@ export async function exportPDF(canvas, selections = {}, filename = 'room-report
     const img = canvas.toDataURL('image/png');
     pdf.addImage(img, 'PNG', 10, 10, 180, 100);
     const lines = Object.entries(selections).map(([k,v]) => `${k}: ${v}`);
+    const sel = typeof getSelectedEquipment === 'function' ? getSelectedEquipment() : null;
+    if (sel && (sel.speakers.length || sel.amps.length)) {
+      lines.push('Equipment:');
+      sel.speakers.forEach(s => lines.push(`Speaker: ${s.brand} ${s.model} (${s.tier || 'C'})`));
+      sel.amps.forEach(a => lines.push(`Amp: ${a.brand} ${a.model} (${a.tier || 'C'})`));
+    }
     pdf.text(lines, 10, 120);
     pdf.save(filename);
   } catch (e) {

@@ -69,3 +69,23 @@ Pins persist between sessions and export with the JSON report.
 ## Spinorama Import
 
 Drag a CEA-2034 CSV onto the Spinorama Import panel, preview the first rows and confidence, then apply the import to the selected speaker. The importer uses a built-in CSV parser, so no external packages are required. Required headers: `freq_hz,on_axis_db,[listening_window_db,early_reflections_db,sound_power_db,di_listening_window_db,di_sound_power_db]`. Valid imports compute a confidence score and speakers with confidence ≥0.7 display a **Spinorama Verified** badge noting the data source.
+
+## Equipment data format & provenance
+
+Equipment items are listed in `data/manifest.json`. Each entry points to a JSON file under `data/speakers/` or `data/amps/` with fields:
+
+```
+{
+  "id": "jbl_590",
+  "kind": "speaker",
+  "brand": "JBL",
+  "model": "Studio 590",
+  "tier": "A|B|C",
+  "confidence": 0.8,
+  "spinId": "JBL-590",
+  "specs": { "sensitivity_db": 92 },
+  "provenance": { "source": "site: jbl.com" }
+}
+```
+
+Missing fields default to tier `C` and confidence `0.5`. `spinVerified` is automatically true when `tier` is `A` and a `spinId` is present. Provenance information is rendered next to the badges in the Equipment panel.

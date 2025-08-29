@@ -142,7 +142,8 @@ function verifyPaneButtons() {
     });
   }
   if (left) {
-    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker'].forEach(id => {
+    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker',
+     'btnAddSpeaker','btnAddListener','btnSetMLP'].forEach(id => {
       if (!left.querySelector('#' + id)) console.warn('[UI] Left pane missing', id);
     });
   }
@@ -838,17 +839,8 @@ function applyMicLayout(name) {
   });
 }
 
-// Placement layer for speakers and listener
+// Placement layer for speakers and listeners
 const placement = new PlacementLayer(scene);
-
-document.getElementById('btnAddSpeaker')?.addEventListener('click', () => {
-  const id = 'SPK' + Date.now();
-  placement.addSpeaker(id, { x: 0, y: 1, z: 0 });
-});
-
-document.getElementById('btnSetMLP')?.addEventListener('click', () => {
-  placement.setMLP({ x: 0, y: 1, z: 0 });
-});
 
 registerExportHook(() => placement.getState());
 
@@ -909,6 +901,15 @@ window.addEventListener('ui:action', async e => {
     case 'btnRestartOnboarding':
       setOnboardingDone(false);
       mountOnboarding(document.body);
+      break;
+    case 'btnAddSpeaker':
+      placement.addSpeaker('SPK' + Date.now(), { x: 0, y: 1, z: 0 });
+      break;
+    case 'btnAddListener':
+      placement.addListener('LST' + Date.now(), { x: 0, y: 1, z: 0 });
+      break;
+    case 'btnSetMLP':
+      placement.markSelectedAsMLP();
       break;
   }
 });

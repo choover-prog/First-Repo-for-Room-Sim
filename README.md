@@ -55,5 +55,5 @@ Select mic layouts (`micLayoutSel`) and export their positions as JSON (`btnExpo
 `btnExportPDF` captures the canvas and selections into a basic PDF report.
 
 ### Speaker/Listener Placement
-`Add Speaker` drops an orange pin you can drag around the floor. `Set Listening Position` places the green main listening point.
+`Add Speaker` drops an orange pin you can drag around the floor. `Add Listener` creates additional green pins. Select a listener and use `Mark MLP` to designate the main listening position.
 Pins persist between sessions and export with the JSON report.

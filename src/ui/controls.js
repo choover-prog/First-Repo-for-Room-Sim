@@ -54,6 +54,7 @@ export function mountSection(title) {
 
 export function initPane(el, side) {
   const label = side.charAt(0).toUpperCase() + side.slice(1);
+  if (el) el.dataset.paneId = side;
 
   const content = document.createElement('div');
   content.className = 'content';
@@ -65,6 +66,7 @@ export function initPane(el, side) {
   toggle.textContent = '▾';
   toggle.title = 'Collapse';
   toggle.setAttribute('aria-label', 'Collapse');
+  toggle.dataset.paneId = side;
   el.appendChild(toggle);
 
   const rail = document.createElement('div');

@@ -33,6 +33,11 @@ The viewer now renders with a four-pane scaffold that surrounds the 3D scene wit
 
 Controls emit `ui:action` custom events for easy wiring and panes remember their open/closed state and size.
 
+### Fullscreen & Pane Controls
+- Each pane tracks its collapsed and fullscreen state via a centralized `LayoutManager` and persists layout to localStorage.
+- The **Restore Pane** button reopens the most recently collapsed pane.
+- Press **Esc** to exit fullscreen or restore the last collapsed pane if fullscreen is not active.
+
 ## Phase-2 Features
 
 ### Reflections

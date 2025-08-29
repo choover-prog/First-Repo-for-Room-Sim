@@ -143,3 +143,38 @@
   height: 5px;
   cursor: ns-resize;
 }
+
+.pane.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+}
+
+.pane.dimmed {
+  opacity: 0.2;
+}
+
+#btnRestorePane {
+  position: fixed;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+}
+
+.pane.collapsed::before {
+  content: '\25B4';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.5;
+  font-size: 12px;
+}
+
+.fullscreen-exit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1002;
+}

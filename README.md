@@ -40,7 +40,9 @@ Each pane header provides Collapse and Fullscreen toggles. Fullscreen panes dim 
 ## Phase-2 Features
 
 ### Reflections
-Enable first-reflection markers via `tglReflections`. Uses a simple mirror method to visualize wall hits.
+Enable first-order reflections overlay via the `Reflections` checkbox (`#reflectionsT`).
+Uses the image-source (mirror) method wired to speaker and MLP pins and is structured for
+future upgrades like frequency bands, materials, directivity, and diffraction.
 
 ### Room Templates
 Choose presets from `roomTemplateSel` to auto-fill room dimensions from JSON templates.

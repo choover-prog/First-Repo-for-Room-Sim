@@ -14,7 +14,7 @@ function runExportHooks(target) {
   exportHooks.forEach(fn => {
     try {
       const res = fn();
-      if (res) target.placement = res;
+      if (res && typeof res === 'object') Object.assign(target, res);
     } catch (e) {
       console.warn('export hook failed', e);
     }

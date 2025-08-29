@@ -8,6 +8,8 @@ import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { PlacementLayer } from './render/PlacementLayer.js';
+import { ReflectionsLayer } from './render/ReflectionsLayer.js';
+import { firstOrder } from './acoustics/ism.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF, registerExportHook } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
@@ -73,6 +75,7 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
+const reflectionsToggle = document.getElementById('reflectionsT');
 const app         = document.getElementById('uiHost');
 const btnFullscreen = document.getElementById('btnFullscreenToggle');
 if (app) installFullscreenGuard(app);
@@ -773,44 +776,32 @@ window.addEventListener('resize', () => {
   }
 })();
 
-// ----- Phase-2 Additions -----
+// ----- Reflections Overlay v1 -----
 const roomDims = { L: 5, W: 4, H: 3 };
-const reflectionsGroup = new THREE.Group();
-reflectionsGroup.visible = false;
-scene.add(reflectionsGroup);
+const reflections = new ReflectionsLayer(scene);
+let reflectionHits = [];
 
-function computeReflections() {
-  reflectionsGroup.clear();
-  const listener = new THREE.Vector3(roomDims.L / 2, 1, roomDims.W / 2);
-  const speakers = [
-    new THREE.Vector3(roomDims.L * 0.25, 1, roomDims.W / 2 - 1),
-    new THREE.Vector3(roomDims.L * 0.25, 1, roomDims.W / 2 + 1)
-  ];
-  const walls = [
-    { normal: new THREE.Vector3(1, 0, 0),  point: new THREE.Vector3(0, 0, 0) },
-    { normal: new THREE.Vector3(-1, 0, 0), point: new THREE.Vector3(roomDims.L, 0, 0) },
-    { normal: new THREE.Vector3(0, 0, 1),  point: new THREE.Vector3(0, 0, 0) },
-    { normal: new THREE.Vector3(0, 0, -1), point: new THREE.Vector3(0, 0, roomDims.W) },
-    { normal: new THREE.Vector3(0, 1, 0),  point: new THREE.Vector3(0, 0, 0) },
-    { normal: new THREE.Vector3(0, -1, 0), point: new THREE.Vector3(0, roomDims.H, 0) }
-  ];
-  const geo = new THREE.SphereGeometry(0.1, 8, 8);
-  const mat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
-  speakers.forEach(sp => {
-    walls.forEach(w => {
-      const mirrored = sp.clone().sub(w.normal.clone().multiplyScalar(2 * sp.clone().sub(w.point).dot(w.normal)));
-      const dir = listener.clone().sub(mirrored);
-      const denom = dir.dot(w.normal);
-      if (Math.abs(denom) < 1e-6) return;
-      const t = w.point.clone().sub(mirrored).dot(w.normal) / denom;
-      if (t < 0 || t > 1) return;
-      const hit = mirrored.clone().add(dir.multiplyScalar(t));
-      const m = new THREE.Mesh(geo, mat);
-      m.position.copy(hit);
-      reflectionsGroup.add(m);
-    });
-  });
+function recomputeReflections() {
+  const state = placement.getState();
+  const mlp = state.listeners.find(l => l.isMain)?.pos;
+  if (!reflectionsToggle?.checked || !mlp || state.speakers.length === 0) {
+    reflectionHits = [];
+    reflections.setHits([]);
+    return;
+  }
+  reflectionHits = firstOrder({ room: roomDims, speakers: state.speakers, mlp });
+  reflections.setHits(reflectionHits);
 }
+
+reflectionsToggle?.addEventListener('change', () => {
+  reflections.setEnabled(reflectionsToggle.checked);
+  recomputeReflections();
+});
+
+window.addEventListener('placement:changed', recomputeReflections);
+window.addEventListener('pointerup', () => {
+  window.dispatchEvent(new CustomEvent('placement:changed'));
+});
 
 const micGroup = new THREE.Group();
 micGroup.visible = false;
@@ -842,7 +833,8 @@ function applyMicLayout(name) {
 // Placement layer for speakers and listeners
 const placement = new PlacementLayer(scene);
 
-registerExportHook(() => placement.getState());
+registerExportHook(() => ({ placement: placement.getState() }));
+registerExportHook(() => ({ reflections: reflectionsToggle?.checked ? reflectionHits : [] }));
 
 // Populate mic layout dropdown
 (function initMicLayouts() {
@@ -879,12 +871,22 @@ registerExportHook(() => placement.getState());
 window.addEventListener('ui:action', async e => {
   const { id, payload } = e.detail || {};
   switch (id) {
-    case 'roomL': roomDims.L = parseFloat(payload) || roomDims.L; break;
-    case 'roomW': roomDims.W = parseFloat(payload) || roomDims.W; break;
-    case 'roomH': roomDims.H = parseFloat(payload) || roomDims.H; break;
+    case 'roomL':
+      roomDims.L = parseFloat(payload) || roomDims.L;
+      recomputeReflections();
+      break;
+    case 'roomW':
+      roomDims.W = parseFloat(payload) || roomDims.W;
+      recomputeReflections();
+      break;
+    case 'roomH':
+      roomDims.H = parseFloat(payload) || roomDims.H;
+      recomputeReflections();
+      break;
     case 'tglReflections':
-      reflectionsGroup.visible = !!payload;
-      if (payload) computeReflections();
+      reflectionsToggle.checked = !!payload;
+      reflections.setEnabled(!!payload);
+      recomputeReflections();
       break;
     case 'tglMicLayout':
       micGroup.visible = !!payload;
@@ -904,12 +906,15 @@ window.addEventListener('ui:action', async e => {
       break;
     case 'btnAddSpeaker':
       placement.addSpeaker('SPK' + Date.now(), { x: 0, y: 1, z: 0 });
+      window.dispatchEvent(new CustomEvent('placement:changed'));
       break;
     case 'btnAddListener':
       placement.addListener('LST' + Date.now(), { x: 0, y: 1, z: 0 });
+      window.dispatchEvent(new CustomEvent('placement:changed'));
       break;
     case 'btnSetMLP':
       placement.markSelectedAsMLP();
+      window.dispatchEvent(new CustomEvent('placement:changed'));
       break;
   }
 });

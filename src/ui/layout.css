@@ -148,6 +148,20 @@ body.app-has-fullscreen .pane:not(.is-fullscreen) {
   z-index: 10001;
 }
 
+.pane .restore-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(17, 20, 26, 0.9);
+  padding: 4px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10000;
+}
+
 .pane-header {
   display: flex;
   justify-content: flex-end;

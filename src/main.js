@@ -101,7 +101,13 @@ mountBottomPane(document.getElementById('paneBottom'));
 LayoutManager.init(document);
 ['top','left','right','bottom'].forEach((side) => {
   const el = document.querySelector(`.pane[data-pane-id="${side}"]`);
-  el?.querySelector('.btn-collapse')?.addEventListener('click', () => LayoutManager.setCollapsed(side, true));
+  const collapseBtn = el?.querySelector('.btn-collapse');
+  if (collapseBtn) {
+    collapseBtn.addEventListener('click', () => {
+      const isCollapsed = el.classList.contains('is-collapsed');
+      LayoutManager.setCollapsed(side, !isCollapsed);
+    });
+  }
   el?.querySelector('.btn-fullscreen')?.addEventListener('click', () => LayoutManager.setFullscreen(side, true));
 });
 

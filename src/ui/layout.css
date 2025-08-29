@@ -88,6 +88,21 @@
   min-height: 22px;
 }
 
+.pane.is-collapsed .pane-header {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.pane.is-collapsed .btn-fullscreen {
+  display: none;
+}
+.pane.is-collapsed .btn-collapse {
+  width: 100%;
+  height: 100%;
+}
+
 .pane.is-collapsed .pane-body {
   height: 0;
   overflow: hidden;

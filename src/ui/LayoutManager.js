@@ -65,6 +65,14 @@ const LayoutManager = (() => {
     }
 
     el.classList.toggle('is-collapsed', bool);
+    const btn = el.querySelector('.btn-collapse');
+    if (btn) {
+      if (bool) {
+        btn.textContent = id === 'left' ? '▶' : id === 'right' ? '◀' : id === 'top' ? '▼' : '▲';
+      } else {
+        btn.textContent = '▾';
+      }
+    }
 
     if (bool) {
       el.style[sizeProp] = collapsedSize;

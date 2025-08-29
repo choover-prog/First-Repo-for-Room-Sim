@@ -1,4 +1,4 @@
-import { makeToggle, mountSection, initPane } from '../controls.js';
+import { makeToggle, mountSection, initPane, makeButton } from '../controls.js';
 
 function number(id) {
   const n = document.createElement('input');
@@ -22,7 +22,10 @@ export function mount(el) {
     number('roomH'),
     makeToggle('tglReflections', 'Reflections'),
     makeToggle('tglMicLayout', 'Mic Layout'),
-    makeToggle('tglSeatMarker', 'Seat Marker')
+    makeToggle('tglSeatMarker', 'Seat Marker'),
+    makeButton('btnAddSpeaker', 'Add Speaker'),
+    makeButton('btnAddListener', 'Add Listener'),
+    makeButton('btnSetMLP', 'Mark MLP')
   );
   content.appendChild(sec);
 }

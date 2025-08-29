@@ -7,7 +7,8 @@ import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
-import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF } from './lib/report.js';
+import { PlacementLayer } from './render/PlacementLayer.js';
+import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF, registerExportHook } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
@@ -141,7 +142,8 @@ function verifyPaneButtons() {
     });
   }
   if (left) {
-    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker'].forEach(id => {
+    ['tglLFHeatmap','roomL','roomW','roomH','tglReflections','tglMicLayout','tglSeatMarker',
+     'btnAddSpeaker','btnAddListener','btnSetMLP'].forEach(id => {
       if (!left.querySelector('#' + id)) console.warn('[UI] Left pane missing', id);
     });
   }
@@ -264,6 +266,10 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 camera.position.set(4, 2, 6);
+
+// Expose for placement layer interactions
+window._placementRenderer = renderer;
+window._placementCamera = camera;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -833,6 +839,11 @@ function applyMicLayout(name) {
   });
 }
 
+// Placement layer for speakers and listeners
+const placement = new PlacementLayer(scene);
+
+registerExportHook(() => placement.getState());
+
 // Populate mic layout dropdown
 (function initMicLayouts() {
   const sel = document.getElementById('micLayoutSel');
@@ -890,6 +901,15 @@ window.addEventListener('ui:action', async e => {
     case 'btnRestartOnboarding':
       setOnboardingDone(false);
       mountOnboarding(document.body);
+      break;
+    case 'btnAddSpeaker':
+      placement.addSpeaker('SPK' + Date.now(), { x: 0, y: 1, z: 0 });
+      break;
+    case 'btnAddListener':
+      placement.addListener('LST' + Date.now(), { x: 0, y: 1, z: 0 });
+      break;
+    case 'btnSetMLP':
+      placement.markSelectedAsMLP();
       break;
   }
 });

@@ -25,6 +25,7 @@ import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen
 import LayoutManager from './ui/LayoutManager.js';
 import { mountBottomToolbar } from './panels/BottomToolbar.js';
 import { initResizers } from './ui/ResizerManager.js';
+import { toCSV } from './lib/csv.js';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -80,6 +81,8 @@ const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
 const reflectionsToggle = document.getElementById('tglReflections');
+const tglSeatMarker = document.getElementById('tglSeatMarker');
+const btnExportPlacementCSV = document.getElementById('btnExportPlacementCSV');
 const app         = document.getElementById('uiHost');
 const btnFullscreen = document.getElementById('btnFullscreenToggle');
 if (app) installFullscreenGuard(app);
@@ -826,6 +829,24 @@ function applyMicLayout(name) {
 
 // Placement layer for speakers and listeners
 const placement = new PlacementLayer(scene);
+
+tglSeatMarker && (tglSeatMarker.checked = placement.seatMarkerEnabled);
+tglSeatMarker?.addEventListener('change', e => {
+  placement.setSeatMarkerEnabled(e.target.checked);
+});
+
+btnExportPlacementCSV?.addEventListener('click', () => {
+  const { speakers = [], mlp = null } = placement.getState();
+  const rows = [['type', 'id', 'x', 'y', 'z']];
+  speakers.forEach(s => rows.push(['speaker', s.id, s.pos.x, s.pos.y, s.pos.z]));
+  if (mlp) rows.push(['mlp', 'MLP', mlp.pos.x, mlp.pos.y, mlp.pos.z]);
+  const csv = toCSV(rows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'placement.csv';
+  a.click();
+});
 
 registerExportHook(() => ({ placement: placement.getState() }));
 registerExportHook(() => ({ reflections: reflectionsToggle?.checked ? reflectionHits : [] }));

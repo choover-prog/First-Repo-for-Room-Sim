@@ -4,6 +4,7 @@
  */
 import jsPDF from './jspdf-stub.js';
 import { getSelectedEquipment } from '../panels/EquipmentPanel.js';
+import { toCSV } from './csv.js';
 
 // Hooks allow modules to contribute extra data to exports
 const exportHooks = [];
@@ -26,6 +27,8 @@ registerExportHook(() => {
   const sel = typeof getSelectedEquipment === 'function' ? getSelectedEquipment() : null;
   return { equipment: sel ? { speakerIds: sel.speakers?.map(s => s.id) || [], ampIds: sel.amps?.map(a => a.id) || [] } : {} };
 });
+
+export { toCSV };
 
 /**
  * Capture canvas as PNG and return as blob
@@ -196,6 +199,12 @@ export function exportMeasurementsCSV(measurements, filename = 'measurements.csv
     console.error('CSV export failed:', error);
     throw error;
   }
+}
+
+export function exportPlacementCSV(rows, filename = 'placement.csv') {
+  const csv = toCSV(rows);
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  downloadBlobURL(blob, filename);
 }
 
 // Simple PDF export using jsPDF

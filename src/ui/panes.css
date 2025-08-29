@@ -1,0 +1,7 @@
+//------------------------------------------------------------
+/* Layout only; keep existing sizing if you already use a grid system */
+
+/* Local utility styles */
+.section { margin: 8px 10px; }
+.section h3 { margin: 6px 0; font-size: 14px; }
+.toolbar-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 10px; }

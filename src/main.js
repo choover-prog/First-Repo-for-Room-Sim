@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
-import { mountSpinoramaImportPanel } from './panels/SpinoramaImportPanel.js';
+import { mountSpinoramaImport } from './panels/SpinoramaImportPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
@@ -15,14 +15,15 @@ import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapDat
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
+import './ui/panes.css';
 import { fitCameraToObject } from './view/fitCamera.js';
 import { mount as mountTopPane } from './ui/panes/TopPane.js';
 import { mount as mountLeftPane } from './ui/panes/LeftPane.js';
 import { mount as mountRightPane } from './ui/panes/RightPane.js';
-import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
 import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
 import LayoutManager from './ui/LayoutManager.js';
+import { mountBottomToolbar } from './panels/BottomToolbar.js';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -77,7 +78,7 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
-const reflectionsToggle = document.getElementById('reflectionsT');
+const reflectionsToggle = document.getElementById('tglReflections');
 const app         = document.getElementById('uiHost');
 const btnFullscreen = document.getElementById('btnFullscreenToggle');
 if (app) installFullscreenGuard(app);
@@ -102,8 +103,8 @@ mountTopPane(document.getElementById('paneTop'));
 mountLeftPane(document.getElementById('paneLeft'));
 mountRightPane(document.getElementById('paneRight'));
 mountEquipmentPanel();
-mountSpinoramaImportPanel();
-mountBottomPane(document.getElementById('paneBottom'));
+mountSpinoramaImport();
+mountBottomToolbar();
 
 LayoutManager.init(document);
 ['top','left','right','bottom'].forEach((side) => {
@@ -118,8 +119,6 @@ LayoutManager.init(document);
   el?.querySelector('.btn-fullscreen')?.addEventListener('click', () => LayoutManager.setFullscreen(side, true));
 });
 
-const restoreBtn = document.getElementById('btnRestorePane');
-restoreBtn?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {

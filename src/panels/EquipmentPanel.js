@@ -4,6 +4,7 @@ import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
 import { getSpin } from '../lib/spin/store.js';
 import { SpinoramaBadge } from '../ui/Badges.js';
+import { mountInto, PANE_IDS } from '../ui/panes.ts';
 
 async function loadJSON(url) {
   const r = await fetch(url);
@@ -27,15 +28,10 @@ function tipAttr(key, text) {
 }
 
 export function mountEquipmentPanel() {
-  const rightPane = document.getElementById('paneRight');
-  if (!rightPane) {
-    console.error('[UI] paneRight not found');
-    return;
-  }
   const personaCfg = getPersonaConfig();
   const root = el(`
-    <div style="margin-top:12px">
-      <h2 style="font-size:16px;margin:8px 0">Equipment</h2>
+    <div id="equipment-pane" class="section">
+      <h3>Equipment</h3>
       <div class="row" ${tipAttr('selectEq','Pick a speaker and amp to evaluate headroom')} >
         <select id="spSel"></select>
         <select id="ampSel"></select>
@@ -51,9 +47,10 @@ export function mountEquipmentPanel() {
       <div id="eqpTier" class="muted" style="margin:6px 0"></div>
       <div id="eqpStats" class="muted"></div>
       <div id="eqpWarn" class="muted" style="color:#ffb3b3"></div>
+      <div id="equipment-spin-section"></div>
     </div>
   `);
-  rightPane.appendChild(root);
+  mountInto(PANE_IDS.right, root);
 
   const spSel  = root.querySelector('#spSel');
   const ampSel = root.querySelector('#ampSel');

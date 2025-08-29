@@ -1,21 +1,24 @@
 import { parseSpinCSV, normalizeSpinRows, importSpinorama } from '../agents/spinorama.agent.js';
+import { mountInto, PANE_IDS } from '../ui/panes.ts';
 
-export function mountSpinoramaImportPanel() {
-  const host = document.getElementById('spinImport');
-  if (!host) return;
-  host.innerHTML = `
-    <div style="margin-top:12px">
-      <h3 style="font-size:14px;margin:8px 0">Spinorama Import</h3>
+export function mountSpinoramaImport() {
+  const host = document.getElementById('equipment-spin-section') || mountInto(PANE_IDS.right, document.createElement('div'));
+  const box = document.createElement('div');
+  box.className = 'section';
+  box.innerHTML = `
+    <details open>
+      <summary>Spinorama Import</summary>
       <input type="file" id="spinFile" accept=".csv" />
       <div id="spinPreview" class="muted" style="font-size:12px;margin-top:4px"></div>
       <button id="spinApply" disabled>Apply Import</button>
       <div id="spinError" style="color:#ff6b6b;font-size:12px;margin-top:4px"></div>
-    </div>
+    </details>
   `;
-  const fileInput = host.querySelector('#spinFile');
-  const preview = host.querySelector('#spinPreview');
-  const applyBtn = host.querySelector('#spinApply');
-  const errEl = host.querySelector('#spinError');
+  host.appendChild(box);
+  const fileInput = box.querySelector('#spinFile');
+  const preview = box.querySelector('#spinPreview');
+  const applyBtn = box.querySelector('#spinApply');
+  const errEl = box.querySelector('#spinError');
   let currentRows = null;
   let currentMeta = null;
   fileInput.addEventListener('change', async (e) => {

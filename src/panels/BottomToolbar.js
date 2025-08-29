@@ -1,9 +1,11 @@
-import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js';
+import { mountInto, PANE_IDS } from '../ui/panes.ts';
+import { makeButton, makeDropdown } from '../ui/controls.js';
 
-export function mount(el) {
-  if (!el) return;
-  const content = initPane(el, 'bottom');
-  const sec = mountSection();
+export function mountBottomToolbar() {
+  const bar = document.createElement('div');
+  bar.id = 'bottom-toolbar';
+  bar.className = 'toolbar-row';
+
   const measureFile = document.createElement('input');
   measureFile.type = 'file';
   measureFile.id = 'measureFile';
@@ -13,7 +15,8 @@ export function mount(el) {
     console.info('[UI]', 'btnImportMeasurements');
     window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'btnImportMeasurements' } }));
   });
-  sec.append(
+
+  bar.append(
     makeButton('btnChat', 'AI Coach'),
     makeButton('btnCalAssistant', 'Calibration Assistant'),
     measureFile,
@@ -22,5 +25,7 @@ export function mount(el) {
     makeDropdown('micLayoutSel', ['Default']),
     makeButton('btnExportMics', 'Export Mics')
   );
-  content.appendChild(sec);
+
+  mountInto(PANE_IDS.bottom, bar);
+  return bar;
 }

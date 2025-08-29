@@ -31,16 +31,22 @@ The viewer now renders with a four-pane scaffold that surrounds the 3D scene wit
   - `btnImportREW`
   - `btnExportFilters`
 
-Controls emit `ui:action` custom events for easy wiring and panes remember their open/closed state and size.
+Controls emit `ui:action` custom events for easy wiring and panes remember their open/closed state and size. Panels can be mounted programmatically via the helper:
 
-## Pane controls: Fullscreen & Restore
+```js
+import { mountInto, PANE_IDS } from './ui/panes.ts';
+const node = document.createElement('div');
+mountInto(PANE_IDS.right, node);
+```
 
-Each pane header provides Collapse and Fullscreen toggles. Fullscreen panes dim the rest of the interface and include an inline Exit control or respond to the Escape key. Collapsed panes can be revived using the persistent "Restore Pane" button in the lower-left corner.
+## Pane controls: Fullscreen
+
+Each pane header provides Collapse and Fullscreen toggles. Fullscreen panes dim the rest of the interface and include an inline Exit control or respond to the Escape key.
 
 ## Phase-2 Features
 
 ### Reflections
-Enable first-order reflections overlay via the `Reflections` checkbox (`#reflectionsT`).
+Enable first-order reflections overlay via the `Reflections` checkbox (`#tglReflections`).
 Uses the image-source (mirror) method wired to speaker and MLP pins and is structured for
 future upgrades like frequency bands, materials, directivity, and diffraction.
 

@@ -1,15 +1,15 @@
-const store = new Map();
+export const spinByEquipId = {};
 
 export function setSpinForEquipment(equipId, spinSet) {
   if (!equipId || !spinSet) return;
-  store.set(equipId, spinSet);
+  spinByEquipId[equipId] = spinSet;
 }
 
 export function getSpin(equipId) {
-  return store.get(equipId);
+  return spinByEquipId[equipId];
 }
 
 export default {
   setSpinForEquipment,
-  getSpin
+  getSpin,
 };

@@ -17,6 +17,7 @@ import { mount as mountRightPane } from './ui/panes/RightPane.js';
 import { mount as mountBottomPane } from './ui/panes/BottomPane.js';
 import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEnabled, setTooltipsEnabled as setUIPrefsTooltipsEnabled } from './state/ui_prefs.js';
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
+import LayoutManager from './ui/LayoutManager.js';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -97,6 +98,10 @@ mountRightPane(document.getElementById('paneRight'));
 mountEquipmentPanel();
 mountBottomPane(document.getElementById('paneBottom'));
 
+LayoutManager.init(document);
+const restoreBtn = document.getElementById('btnRestorePane');
+restoreBtn?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
+
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');
   const left = document.getElementById('paneLeft');
@@ -136,7 +141,7 @@ function applyPaneState(state) {
     const el = document.getElementById('pane' + side.charAt(0).toUpperCase() + side.slice(1));
     if (!el) return;
     const s = state[side] || { open: true };
-    el.classList.toggle('collapsed', s.open === false);
+    if (s.open === false) LayoutManager.setCollapsed(side, true);
     if (s.size) {
       if (side === 'left' || side === 'right') el.style.width = s.size + 'px';
       else el.style.height = s.size + 'px';
@@ -148,7 +153,8 @@ function togglePane(paneId) {
   const side = paneId.replace('pane', '').toLowerCase();
   const el = document.getElementById(paneId);
   if (!el) return;
-  const collapsed = el.classList.toggle('collapsed');
+  const collapsed = el.classList.contains('is-collapsed') || el.classList.contains('collapsed');
+  LayoutManager.setCollapsed(side, !collapsed);
   savePane(side, { open: !collapsed });
 }
 
@@ -160,6 +166,7 @@ function resetLayout() {
     bottom: { open: true, size: 56 }
   };
   setPaneState(defaults);
+  ['top','left','right','bottom'].forEach(side => LayoutManager.setCollapsed(side, false));
   applyPaneState(defaults);
   renderer.setSize(container.clientWidth, container.clientHeight);
   camera.aspect = container.clientWidth / container.clientHeight;
@@ -169,14 +176,20 @@ function resetLayout() {
 
 applyPaneState(getPaneState());
 
-['Top', 'Left', 'Right', 'Bottom'].forEach((side) => {
-  const paneId = 'pane' + side;
-  document.getElementById(`btnCollapse${side}`)?.addEventListener('click', () => togglePane(paneId));
-  const paneEl = document.getElementById(paneId);
-  paneEl?.addEventListener('click', (e) => {
-    if (!paneEl.classList.contains('collapsed')) return;
-    if (e.target === paneEl || e.target.classList.contains('rail-label')) {
-      togglePane(paneId);
+document.querySelectorAll('.pane').forEach(pane => {
+  const id = pane.dataset.paneId;
+  pane.querySelector('.btn-collapse')?.addEventListener('click', () => {
+    const collapsed = pane.classList.contains('is-collapsed') || pane.classList.contains('collapsed');
+    LayoutManager.setCollapsed(id, !collapsed);
+  });
+  pane.querySelector('.btn-fullscreen')?.addEventListener('click', () => {
+    const fs = pane.classList.contains('is-fullscreen');
+    LayoutManager.setFullscreen(id, !fs);
+  });
+  pane.addEventListener('click', (e) => {
+    if (!pane.classList.contains('is-collapsed') && !pane.classList.contains('collapsed')) return;
+    if (e.target === pane || e.target.classList.contains('rail-label')) {
+      LayoutManager.setCollapsed(id, false);
     }
   });
 });
@@ -184,14 +197,30 @@ applyPaneState(getPaneState());
 document.getElementById('btnResetLayout')?.addEventListener('click', resetLayout);
 
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const id = LayoutManager.activeFullscreen;
+    if (id) LayoutManager.setFullscreen(id, false);
+  }
   if (e.shiftKey && !e.ctrlKey && !e.altKey) {
-    const map = { T: 'paneTop', L: 'paneLeft', R: 'paneRight', B: 'paneBottom' };
+    const map = { T: 'top', L: 'left', R: 'right', B: 'bottom' };
     const k = e.key.toUpperCase();
-    if (map[k]) { e.preventDefault(); togglePane(map[k]); }
+    if (map[k]) {
+      e.preventDefault();
+      togglePane('pane' + map[k].charAt(0).toUpperCase() + map[k].slice(1));
+    }
   }
   if (e.ctrlKey && e.altKey && e.key === '0') {
     e.preventDefault();
     resetLayout();
+  }
+});
+
+document.addEventListener('fullscreenchange', () => {
+  const inFS = !!document.fullscreenElement;
+  document.body.classList.toggle('app-has-fullscreen', inFS);
+  if (!inFS) {
+    const id = LayoutManager.activeFullscreen;
+    if (id) LayoutManager.setFullscreen(id, false);
   }
 });
 

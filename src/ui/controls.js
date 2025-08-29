@@ -54,18 +54,25 @@ export function mountSection(title) {
 
 export function initPane(el, side) {
   const label = side.charAt(0).toUpperCase() + side.slice(1);
+  el.dataset.paneId = side;
 
   const content = document.createElement('div');
-  content.className = 'content';
+  content.className = 'content pane-body';
   el.appendChild(content);
 
   const toggle = document.createElement('button');
   toggle.id = `btnCollapse${label}`;
-  toggle.className = 'collapse-toggle';
+  toggle.className = 'collapse-toggle btn-collapse';
   toggle.textContent = '▾';
   toggle.title = 'Collapse';
   toggle.setAttribute('aria-label', 'Collapse');
   el.appendChild(toggle);
+
+  const fs = document.createElement('button');
+  fs.className = 'btn-fullscreen';
+  fs.textContent = '⛶';
+  fs.setAttribute('aria-label', 'Fullscreen');
+  el.appendChild(fs);
 
   const rail = document.createElement('div');
   rail.className = 'rail-label';

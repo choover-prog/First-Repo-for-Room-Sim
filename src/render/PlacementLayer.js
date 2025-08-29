@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { makeLabelSprite } from './LabelSprite.js';
+import { getSelectedEquipment } from '../panels/EquipmentPanel.js';
 
 /**
  * PlacementLayer handles speaker and listener pins in the scene.
@@ -11,6 +13,11 @@ export class PlacementLayer {
     this.speakers = new Map();
     this.listeners = new Map();
     this.selected = null;
+    this.labels = new Map();
+    this.hovered = null;
+    this.seatMarkerEnabled = true;
+    this.mlpRing = null;
+    this.mlpMesh = null;
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -72,17 +79,25 @@ export class PlacementLayer {
   }
 
   handlePointerMove(event) {
-    if (!this.dragging) return;
     this.setPointer(event);
     this.raycaster.setFromCamera(this.pointer, this.camera);
-    const p = this.intersectFloor();
-    if (!p) return;
-    this.dragging.position.set(p.x, 1, p.z);
-    const id = this.dragging.userData.id;
-    if (this.dragging.userData.type === 'speaker') {
-      this.moveSpeaker(id, { x: p.x, y: 1, z: p.z });
-    } else if (this.dragging.userData.type === 'listener') {
-      this.moveListener(id, { x: p.x, y: 1, z: p.z });
+    if (this.dragging) {
+      const p = this.intersectFloor();
+      if (!p) return;
+      this.dragging.position.set(p.x, 1, p.z);
+      const id = this.dragging.userData.id;
+      if (this.dragging.userData.type === 'speaker') {
+        this.moveSpeaker(id, { x: p.x, y: 1, z: p.z });
+      } else if (this.dragging.userData.type === 'listener') {
+        this.moveListener(id, { x: p.x, y: 1, z: p.z });
+      }
+    } else {
+      const objects = [];
+      this.speakers.forEach(s => objects.push(s.mesh));
+      this.listeners.forEach(l => objects.push(l.mesh));
+      const hit = this.raycaster.intersectObjects(objects, false)[0];
+      this.hovered = hit ? hit.object : null;
+      this.updateColors();
     }
   }
 
@@ -106,7 +121,7 @@ export class PlacementLayer {
     }
   }
 
-  addSpeaker(id, pos) {
+  addSpeaker(id, pos, opts = {}) {
     if (this.speakers.has(id)) return;
     const geometry = new THREE.SphereGeometry(0.15, 16, 16);
     const material = new THREE.MeshStandardMaterial({ color: 0xff8800 });
@@ -115,8 +130,12 @@ export class PlacementLayer {
     mesh.userData = { id, type: 'speaker', baseColor: 0xff8800 };
     this.scene.add(mesh);
     this.speakers.set(id, { mesh });
+    const eq = typeof getSelectedEquipment === 'function' ? getSelectedEquipment() : null;
+    let label = opts.label || id;
+    const spk = eq?.speakers?.find(s => s.slot === id || s.id === id);
+    if (!opts.label && spk) label = [spk.brand, spk.model].filter(Boolean).join(' ');
+    this._ensureLabel(id, label, mesh);
     this.updateColors();
-    // TODO: add SpriteText label
     this.saveState();
   }
 
@@ -135,6 +154,12 @@ export class PlacementLayer {
     entry.mesh.material.dispose();
     if (this.selected === entry.mesh) this.selected = null;
     this.speakers.delete(id);
+    const lbl = this.labels.get(id);
+    if (lbl) {
+      lbl.material.map.dispose();
+      lbl.material.dispose();
+      this.labels.delete(id);
+    }
     this.updateColors();
     this.saveState();
   }
@@ -148,6 +173,13 @@ export class PlacementLayer {
     mesh.userData = { id, type: 'listener', baseColor: color };
     this.scene.add(mesh);
     this.listeners.set(id, { mesh, isMain });
+    if (isMain) {
+      this.mlpMesh = mesh;
+      this._ensureLabel('mlp', 'MLP', mesh);
+      if (!this.mlpRing) this._makeMlpRing();
+      this.mlpRing.position.set(pos.x, 0.01, pos.z);
+      this.mlpRing.visible = this.seatMarkerEnabled;
+    }
     this.updateColors();
     this.saveState();
   }
@@ -156,6 +188,9 @@ export class PlacementLayer {
     const entry = this.listeners.get(id);
     if (!entry) return;
     entry.mesh.position.set(pos.x, pos.y, pos.z);
+    if (entry.isMain && this.mlpRing) {
+      this.mlpRing.position.set(pos.x, 0.01, pos.z);
+    }
     this.saveState();
   }
 
@@ -167,6 +202,17 @@ export class PlacementLayer {
     entry.mesh.material.dispose();
     if (this.selected === entry.mesh) this.selected = null;
     this.listeners.delete(id);
+    const key = entry.isMain ? 'mlp' : id;
+    const lbl = this.labels.get(key);
+    if (lbl) {
+      lbl.material.map.dispose();
+      lbl.material.dispose();
+      this.labels.delete(key);
+    }
+    if (entry.isMain) {
+      this.mlpMesh = null;
+      if (this.mlpRing) this.mlpRing.visible = false;
+    }
     this.updateColors();
     this.saveState();
   }
@@ -186,15 +232,60 @@ export class PlacementLayer {
     this.speakers.forEach((s) => {
       s.mesh.material.color.setHex(0xff8800);
       s.mesh.userData.baseColor = 0xff8800;
+      s.mesh.scale.set(1, 1, 1);
     });
     this.listeners.forEach((l) => {
       const color = l.isMain ? 0x00ff00 : 0x009900;
       l.mesh.material.color.setHex(color);
       l.mesh.userData.baseColor = color;
+      l.mesh.scale.set(1, 1, 1);
     });
+    if (this.hovered && this.hovered !== this.selected) {
+      this.hovered.scale.setScalar(1.08);
+    }
     if (this.selected) {
       this.selected.material.color.offsetHSL(0, 0, 0.2);
+      this.selected.scale.setScalar(1.08);
     }
+  }
+
+  setSeatMarkerEnabled(on) {
+    this.seatMarkerEnabled = !!on;
+    if (this.mlpMesh) this.mlpMesh.visible = this.seatMarkerEnabled;
+    if (!this.mlpRing) this._makeMlpRing();
+    this.mlpRing.visible = this.seatMarkerEnabled && !!this.mlpMesh;
+    this.saveState();
+  }
+
+  _makeMlpRing() {
+    const geo = new THREE.RingGeometry(0.5, 0.6, 32);
+    const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.25, side: THREE.DoubleSide });
+    this.mlpRing = new THREE.Mesh(geo, mat);
+    this.mlpRing.rotation.x = -Math.PI / 2;
+    this.mlpRing.position.y = 0.01;
+    this.mlpRing.visible = this.seatMarkerEnabled && !!this.mlpMesh;
+    this.scene.add(this.mlpRing);
+  }
+
+  _ensureLabel(id, text, object3D) {
+    let spr = this.labels.get(id);
+    if (!spr) {
+      spr = makeLabelSprite(text);
+      spr.userData = { text };
+      this.labels.set(id, spr);
+      object3D.add(spr);
+    } else if (spr.userData.text !== text) {
+      object3D.remove(spr);
+      spr.material.map.dispose();
+      spr.material.dispose();
+      spr = makeLabelSprite(text);
+      spr.userData = { text };
+      this.labels.set(id, spr);
+      object3D.add(spr);
+    } else if (spr.parent !== object3D) {
+      object3D.add(spr);
+    }
+    spr.position.set(0, 0.18, 0);
   }
 
   getState() {
@@ -203,12 +294,14 @@ export class PlacementLayer {
       const p = s.mesh.position;
       speakers.push({ id, pos: { x: p.x, y: p.y, z: p.z } });
     });
-    const listeners = [];
-    this.listeners.forEach((l, id) => {
-      const p = l.mesh.position;
-      listeners.push({ id, pos: { x: p.x, y: p.y, z: p.z }, isMain: l.isMain });
+    let mlp = null;
+    this.listeners.forEach((l) => {
+      if (l.isMain) {
+        const p = l.mesh.position;
+        mlp = { pos: { x: p.x, y: p.y, z: p.z } };
+      }
     });
-    return { speakers, listeners };
+    return { speakers, mlp, seatMarkerEnabled: this.seatMarkerEnabled };
   }
 
   saveState() {
@@ -225,7 +318,9 @@ export class PlacementLayer {
       if (!raw) return;
       const data = JSON.parse(raw);
       data.speakers?.forEach(s => this.addSpeaker(s.id, s.pos));
+      if (data.mlp) this.addListener('LST0', data.mlp.pos, true);
       data.listeners?.forEach(l => this.addListener(l.id, l.pos, l.isMain));
+      this.setSeatMarkerEnabled(data.seatMarkerEnabled !== false);
     } catch (e) {
       console.warn('Placement load failed', e);
     }

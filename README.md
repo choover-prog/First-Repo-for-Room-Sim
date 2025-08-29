@@ -46,7 +46,8 @@ Each pane header provides Collapse and Fullscreen toggles. Collapsing hides the 
 ## Phase-2 Features
 
 ### Reflections
-Enable first-order reflections overlay via the `Reflections` checkbox (`#tglReflections`).
+Enable first-order reflections overlay via the `Reflections` button (`#btnReflections`) in the top toolbar.
+An options popover (⚙) lets you toggle hit markers, adjust line length clamp (m), and set opacity.
 Uses the image-source (mirror) method wired to speaker and MLP pins and is structured for
 future upgrades like frequency bands, materials, directivity, and diffraction.
 
@@ -64,6 +65,7 @@ Select mic layouts (`micLayoutSel`) and export their positions as JSON (`btnExpo
 
 ### Speaker/Listener Placement
 `Add Speaker` drops an orange pin you can drag around the floor. `Add Listener` creates additional green pins. Select a listener and use `Mark MLP` to designate the main listening position.
+Pins now display compact labels (speaker ID/model or **MLP**) with subtle hover/drag highlights. Use the **Seat Marker** checkbox to hide or show the MLP pin and ring, and **Export Placement CSV** to download coordinates.
 Pins persist between sessions and export with the JSON report.
 
 ## Spinorama Import

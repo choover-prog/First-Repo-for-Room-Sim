@@ -80,7 +80,6 @@ const measureBtn  = document.getElementById('measureBtn');
 const clearBtn    = document.getElementById('clearMeasure');
 const unitsSel    = document.getElementById('units');
 const labelEl     = document.getElementById('measureLabel');
-const reflectionsToggle = document.getElementById('tglReflections');
 const tglSeatMarker = document.getElementById('tglSeatMarker');
 const btnExportPlacementCSV = document.getElementById('btnExportPlacementCSV');
 const app         = document.getElementById('uiHost');
@@ -615,6 +614,12 @@ clearBtn?.addEventListener('click', clearMeasure);
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') clearMeasure();
 });
+window.addEventListener('keydown', e => {
+  if (e.key === 'r' || e.key === 'R') {
+    reflectionsBtn?.click();
+    e.preventDefault();
+  }
+});
 
 function clearMeasure() {
   pA = pB = null;
@@ -777,22 +782,33 @@ window.addEventListener('resize', () => {
 const roomDims = { L: 5, W: 4, H: 3 };
 const reflections = new ReflectionsLayer(scene);
 let reflectionHits = [];
+let reflectionPaths = [];
+let reflectionsEnabled = false;
 
 function recomputeReflections() {
   const state = placement.getState();
   const mlp = state.listeners.find(l => l.isMain)?.pos;
-  if (!reflectionsToggle?.checked || !mlp || state.speakers.length === 0) {
+  if (!reflectionsEnabled || !mlp || state.speakers.length === 0) {
     reflectionHits = [];
-    reflections.setHits([]);
+    reflectionPaths = [];
+    reflections.setPaths([]);
     return;
   }
   reflectionHits = firstOrder({ room: roomDims, speakers: state.speakers, mlp });
-  reflections.setHits(reflectionHits);
+  reflectionPaths = reflectionHits.map(h => {
+    const sp = state.speakers.find(s => s.id === h.speakerId)?.pos || { x:0,y:0,z:0 };
+    return { speaker: [sp.x, sp.y, sp.z], hit: h.point, mlp: [mlp.x, mlp.y, mlp.z], surface: h.surface };
+  });
+  reflections.setPaths(reflectionPaths);
 }
 
-reflectionsToggle?.addEventListener('change', () => {
-  reflections.setEnabled(reflectionsToggle.checked);
+const reflectionsBtn = document.getElementById('btnReflections');
+reflectionsBtn?.addEventListener('click', () => {
+  reflectionsEnabled = !reflectionsEnabled;
+  reflectionsBtn.classList.toggle('active', reflectionsEnabled);
+  reflections.setEnabled(reflectionsEnabled);
   recomputeReflections();
+  window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'tglReflections', payload: reflectionsEnabled } }));
 });
 
 window.addEventListener('placement:changed', recomputeReflections);
@@ -849,7 +865,7 @@ btnExportPlacementCSV?.addEventListener('click', () => {
 });
 
 registerExportHook(() => ({ placement: placement.getState() }));
-registerExportHook(() => ({ reflections: reflectionsToggle?.checked ? reflectionHits : [] }));
+registerExportHook(() => ({ reflections: reflectionsEnabled ? reflectionHits : [] }));
 
 // Populate mic layout dropdown
 (function initMicLayouts() {
@@ -899,8 +915,9 @@ window.addEventListener('ui:action', async e => {
       recomputeReflections();
       break;
     case 'tglReflections':
-      reflectionsToggle.checked = !!payload;
-      reflections.setEnabled(!!payload);
+      reflectionsEnabled = !!payload;
+      reflectionsBtn?.classList.toggle('active', reflectionsEnabled);
+      reflections.setEnabled(reflectionsEnabled);
       recomputeReflections();
       break;
     case 'tglMicLayout':
@@ -908,6 +925,18 @@ window.addEventListener('ui:action', async e => {
       break;
     case 'micLayoutSel':
       applyMicLayout(payload);
+      break;
+    case 'reflectionsShowMarkers':
+      reflections.configure({ showMarkers: payload });
+      reflections.setPaths(reflectionPaths);
+      break;
+    case 'reflectionsClamp':
+      reflections.configure({ lengthClamp: parseFloat(payload) });
+      reflections.setPaths(reflectionPaths);
+      break;
+    case 'reflectionsOpacity':
+      reflections.configure({ opacity: parseFloat(payload) });
+      reflections.setPaths(reflectionPaths);
       break;
     case 'btnExportMics':
       downloadJSON(micGroup.children.map(m => ({ x: m.position.x, y: m.position.y, z: m.position.z })), 'mic-layout.json');

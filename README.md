@@ -46,7 +46,8 @@ Each pane header provides Collapse and Fullscreen toggles. Collapsing hides the 
 ## Phase-2 Features
 
 ### Reflections
-Enable first-order reflections overlay via the `Reflections` checkbox (`#tglReflections`).
+Enable first-order reflections overlay via the `Reflections` button (`#btnReflections`) in the top toolbar.
+An options popover (⚙) lets you toggle hit markers, adjust line length clamp (m), and set opacity.
 Uses the image-source (mirror) method wired to speaker and MLP pins and is structured for
 future upgrades like frequency bands, materials, directivity, and diffraction.
 

@@ -20,7 +20,6 @@ export function mount(el) {
     number('roomL'),
     number('roomW'),
     number('roomH'),
-    makeToggle('tglReflections', 'Reflections'),
     makeToggle('tglMicLayout', 'Mic Layout'),
     makeToggle('tglSeatMarker', 'Seat Marker'),
     makeButton('btnAddSpeaker', 'Add Speaker'),

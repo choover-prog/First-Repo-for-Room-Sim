@@ -39,9 +39,9 @@ const node = document.createElement('div');
 mountInto(PANE_IDS.right, node);
 ```
 
-## Pane controls: Fullscreen
+## Pane controls
 
-Each pane header provides Collapse and Fullscreen toggles. Fullscreen panes dim the rest of the interface and include an inline Exit control or respond to the Escape key.
+Each pane header provides Collapse and Fullscreen toggles. Collapsing hides the pane body but leaves the header visible for quick restore. The top header also provides **Restore** to reopen the last collapsed pane and **Reset Layout** to clear saved sizes and return all panes to their defaults. Fullscreen panes dim the rest of the interface and include an inline Exit control or respond to the Escape key.
 
 ## Phase-2 Features
 

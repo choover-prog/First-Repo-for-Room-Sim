@@ -24,7 +24,7 @@ import { getPaneState, setPaneState, getTooltipsEnabled as getUIPrefsTooltipsEna
 import { installEscFullscreenFix, exitFullscreenSafe } from './ui/esc_fullscreen_fix.js';
 import LayoutManager from './ui/LayoutManager.js';
 import { mountBottomToolbar } from './panels/BottomToolbar.js';
-import { initLayout } from './ui/layout.ts';
+import { initResizers } from './ui/ResizerManager.js';
 
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
@@ -106,7 +106,7 @@ mountRightPane(document.getElementById('paneRight'));
   mountEquipmentPanel();
   mountSpinoramaImport();
   mountBottomToolbar();
-  initLayout();
+  initResizers();
 
   LayoutManager.init(document);
 ['top','left','right','bottom'].forEach((side) => {
@@ -114,7 +114,7 @@ mountRightPane(document.getElementById('paneRight'));
   const collapseBtn = el?.querySelector('.btn-collapse');
   if (collapseBtn) {
     collapseBtn.addEventListener('click', () => {
-      const isCollapsed = el.classList.contains('is-collapsed');
+      const isCollapsed = el?.querySelector('.pane-body')?.classList.contains('is-collapsed');
       LayoutManager.setCollapsed(side, !isCollapsed);
     });
   }
@@ -137,6 +137,9 @@ document.addEventListener('fullscreenchange', () => {
     if (fsPane) LayoutManager.setFullscreen(fsPane.dataset.paneId || fsPane.id, false);
   }
 });
+
+document.getElementById('btnRestorePane')?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
+document.getElementById('btnResetLayout')?.addEventListener('click', () => LayoutManager.resetLayout());
 
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');

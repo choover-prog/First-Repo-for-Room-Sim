@@ -33,4 +33,20 @@ describe('csv-lite parser', () => {
     const { rows } = parseCSV(text);
     expect(rows.length).toBe(1);
   });
+
+  it('ignores lines with only commas', () => {
+    const text = 'a,b\n1,2\n,\n3,4';
+    const { rows } = parseCSV(text);
+    expect(rows).toEqual([
+      { a: '1', b: '2' },
+      { a: '3', b: '4' }
+    ]);
+  });
+
+  it('handles BOM, CRLF, quoted commas, and escaped quotes', () => {
+    const text = '\uFEFFname,quote\r\n"Doe, John","He said ""hello"""\r\n';
+    const { headers, rows } = parseCSV(text);
+    expect(headers).toEqual(['name', 'quote']);
+    expect(rows[0]).toEqual({ name: 'Doe, John', quote: 'He said "hello"' });
+  });
 });

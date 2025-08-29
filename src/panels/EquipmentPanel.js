@@ -100,7 +100,7 @@ export function mountEquipmentPanel() {
     `;
     if (spin && spin.verified) {
       const badge = SpinoramaBadge();
-      badge.setAttribute('title', `CEA-2034 data imported; source: ${spin.source || 'unknown'}`);
+      badge.setAttribute('title', `CEA-2034 data imported; confidence: ${spin.confidence_0_1.toFixed(2)}; source: ${spin.source || 'N/A'}`);
       stats.querySelector('.speaker-name')?.appendChild(badge);
     }
     warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';

@@ -41,11 +41,13 @@ export function parseCSV(text) {
   if (lines.length === 0) return { headers:[], rows:[] };
   const headerFields = splitCSVLine(lines[0]).map(h => h.replace(/^\uFEFF/, '')); // strip BOM
   const rows = [];
-  for (let k=1; k<lines.length; k++) {
-    if (!lines[k].trim()) continue;
-    const fields = splitCSVLine(lines[k]);
+  for (let k = 1; k < lines.length; k++) {
+    const line = lines[k];
+    if (!line.trim()) continue;
+    if (line.replace(/,/g, '').trim() === '') continue;
+    const fields = splitCSVLine(line);
     const obj = {};
-    for (let c=0; c<headerFields.length; c++) obj[headerFields[c]] = fields[c] ?? "";
+    for (let c = 0; c < headerFields.length; c++) obj[headerFields[c]] = fields[c] ?? "";
     rows.push(obj);
   }
   return { headers: headerFields, rows };

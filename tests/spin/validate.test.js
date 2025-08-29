@@ -21,8 +21,8 @@ describe('spinorama csv validation', () => {
     const res = parseSpinoramaCSV(csv);
     expect(res.ok).toBe(false);
   });
-  it('non-increasing freq fails', () => {
-    const csv = 'freq_hz,on_axis_db\n20,0\n10,-1';
+  it('non-monotonic freq fails', () => {
+    const csv = 'freq_hz,on_axis_db\n20,0\n1000,-1\n990,-2';
     const res = parseSpinoramaCSV(csv);
     expect(res.ok).toBe(false);
   });

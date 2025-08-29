@@ -25,8 +25,8 @@ describe('spin csv normalization', () => {
     expect(res.ok).toBe(false);
   });
 
-  it('non-increasing freq fails', () => {
-    const { rows } = parseCSV('freq_hz,on_axis_db\n20,0\n10,-1');
+  it('non-monotonic freq fails', () => {
+    const { rows } = parseCSV('freq_hz,on_axis_db\n20,0\n1000,-1\n990,-2');
     const res = normalizeSpinRows(rows);
     expect(res.ok).toBe(false);
   });

@@ -31,5 +31,7 @@ describe('spin badge ui', () => {
     await new Promise((r) => setTimeout(r, 0));
     const badge = document.querySelector('.badge.spin-verified');
     expect(badge).toBeTruthy();
+    expect(badge.getAttribute('title')).toContain('confidence: 0.80');
+    expect(badge.getAttribute('title')).toContain('source: unit');
   });
 });

@@ -15,15 +15,24 @@ export function normalizeSpinRows(rows, meta = {}) {
   }
   const validRows = [];
   let lastFreq = 0;
+  const cleanNum = (v) => {
+    if (v === undefined || v === '') return undefined;
+    const n = Number(String(v).replace(/,/g, ''));
+    return Number.isNaN(n) ? undefined : n;
+  };
   for (const r of rows) {
+    const freq = cleanNum(r.freq_hz);
+    if (freq === undefined || freq <= 0) {
+      return { ok: false, reason: 'invalid freq_hz' };
+    }
     const parsed = SpinCSVRow.safeParse({
-      freq_hz: Number(r.freq_hz),
-      on_axis_db: Number(r.on_axis_db),
-      listening_window_db: r.listening_window_db !== undefined && r.listening_window_db !== '' ? Number(r.listening_window_db) : undefined,
-      early_reflections_db: r.early_reflections_db !== undefined && r.early_reflections_db !== '' ? Number(r.early_reflections_db) : undefined,
-      sound_power_db: r.sound_power_db !== undefined && r.sound_power_db !== '' ? Number(r.sound_power_db) : undefined,
-      di_listening_window_db: r.di_listening_window_db !== undefined && r.di_listening_window_db !== '' ? Number(r.di_listening_window_db) : undefined,
-      di_sound_power_db: r.di_sound_power_db !== undefined && r.di_sound_power_db !== '' ? Number(r.di_sound_power_db) : undefined,
+      freq_hz: freq,
+      on_axis_db: cleanNum(r.on_axis_db),
+      listening_window_db: cleanNum(r.listening_window_db),
+      early_reflections_db: cleanNum(r.early_reflections_db),
+      sound_power_db: cleanNum(r.sound_power_db),
+      di_listening_window_db: cleanNum(r.di_listening_window_db),
+      di_sound_power_db: cleanNum(r.di_sound_power_db),
     });
     if (!parsed.success) return { ok: false, reason: parsed.error.message };
     if (parsed.data.freq_hz <= lastFreq) {

@@ -415,3 +415,11 @@ export class BadgeManager {
   }
 }
 
+
+export function SpinoramaBadge() {
+  const el = document.createElement('span');
+  el.className = 'badge spin-verified';
+  el.textContent = 'Spinorama Verified';
+  el.style.cssText = `display:inline-block;padding:2px 8px;border-radius:999px;background:#3b82f6;color:#0b0d10;font-size:10px;font-weight:600;margin-left:4px`;
+  return el;
+}

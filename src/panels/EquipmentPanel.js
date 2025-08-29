@@ -2,6 +2,8 @@ import { requiredWattsToHitSPL, headroomDb } from '../lib/spl.js';
 import { simplePreferenceScore } from '../lib/preference.js';
 import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js';
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
+import { getSpin } from '../lib/spin/store.js';
+import { SpinoramaBadge } from '../ui/Badges.js';
 
 async function loadJSON(url) {
   const r = await fetch(url);
@@ -88,17 +90,19 @@ export function mountEquipmentPanel() {
     });
     const conf = confidenceFromQuality(q);
     const shownPref = blendScore(rawPref, conf);
-
-    const spinBadge = spData.spinorama && spData.spinorama.freq_hz && spData.spinorama.freq_hz.length
-      ? '<span style="margin-left:4px;padding:2px 6px;border-radius:6px;background:#22b8cf;color:#0b0d10;font-size:10px">spin✓</span>'
-      : '';
+    const spin = getSpin(spSel.value.replace('.json',''));
     stats.innerHTML = `
-      Speaker: <b>${spData.brand} ${spData.model}</b>${spinBadge} (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
+      Speaker: <b class="speaker-name">${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
       Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
       Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
       Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>
       Headroom (8Ω rated): <b>${head.toFixed(1)} dB</b>
     `;
+    if (spin && spin.verified) {
+      const badge = SpinoramaBadge();
+      badge.setAttribute('title', `CEA-2034 data imported; source: ${spin.source || 'unknown'}`);
+      stats.querySelector('.speaker-name')?.appendChild(badge);
+    }
     warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';
   }
 

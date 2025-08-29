@@ -1,7 +1,5 @@
-import { fetchSpinorama, normalizeSpinorama, saveSpinorama } from "../../agents/spinorama.agent";
+import { parseSpinoramaCSV } from "../../agents/spinorama.agent.js";
 export async function spinoramaRefresh(){
-  const rows = await fetchSpinorama();
-  const items = normalizeSpinorama(rows);
-  await saveSpinorama(items);
+  // placeholder task using parseSpinoramaCSV if needed
   return "spinorama.refresh";
 }

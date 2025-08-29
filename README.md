@@ -59,3 +59,7 @@ Select mic layouts (`micLayoutSel`) and export their positions as JSON (`btnExpo
 ### Speaker/Listener Placement
 `Add Speaker` drops an orange pin you can drag around the floor. `Add Listener` creates additional green pins. Select a listener and use `Mark MLP` to designate the main listening position.
 Pins persist between sessions and export with the JSON report.
+
+## Spinorama Import
+
+Drag a CEA-2034 CSV onto the Spinorama Import panel, preview the first rows and confidence, then apply the import to the selected speaker. Required headers: `freq_hz,on_axis_db,[listening_window_db,early_reflections_db,sound_power_db,di_listening_window_db,di_sound_power_db]`. Valid imports compute a confidence score and speakers with confidence ≥0.7 display a **Spinorama Verified** badge noting the data source.

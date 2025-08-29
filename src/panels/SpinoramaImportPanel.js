@@ -1,5 +1,4 @@
-import { parseSpinoramaCSV } from '../agents/spinorama.agent.js';
-import { setSpinForEquipment } from '../lib/spin/store.js';
+import { parseSpinCSV, normalizeSpinRows, importSpinorama } from '../agents/spinorama.agent.js';
 
 export function mountSpinoramaImportPanel() {
   const host = document.getElementById('spinImport');
@@ -17,35 +16,41 @@ export function mountSpinoramaImportPanel() {
   const preview = host.querySelector('#spinPreview');
   const applyBtn = host.querySelector('#spinApply');
   const errEl = host.querySelector('#spinError');
-  let current = null;
+  let currentRows = null;
+  let currentMeta = null;
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const text = await file.text();
-    const res = parseSpinoramaCSV(text, { source: file.name });
+    const rows = await parseSpinCSV(file);
+    const res = normalizeSpinRows(rows, { source: file.name });
     if (!res.ok) {
       errEl.textContent = res.reason;
       preview.textContent = '';
       applyBtn.disabled = true;
-      current = null;
+      currentRows = null;
+      currentMeta = null;
       return;
     }
-    current = res.data;
-    const rows = current.rows.slice(0, 5).map(r => `${r.freq_hz} Hz → ${r.on_axis_db} dB`).join('<br/>');
-    preview.innerHTML = `${rows}<br/>Confidence: ${(current.confidence_0_1 * 100).toFixed(0)}%`;
+    currentRows = rows;
+    currentMeta = { source: file.name };
+    const first = res.data.rows.slice(0, 5).map(r => `${r.freq_hz} Hz → ${r.on_axis_db} dB`).join('<br/>');
+    preview.innerHTML = `${first}<br/>Rows: ${rows.length}<br/>Confidence: ${(res.data.confidence_0_1 * 100).toFixed(0)}%`;
     errEl.textContent = '';
     applyBtn.disabled = false;
   });
   applyBtn.addEventListener('click', () => {
-    if (!current) return;
+    if (!currentRows) return;
     const spSel = document.getElementById('spSel');
     const equipId = spSel ? spSel.value.replace('.json', '') : null;
     if (!equipId) {
       errEl.textContent = 'Select a speaker first';
       return;
     }
-    current.equip_id = equipId;
-    setSpinForEquipment(equipId, current);
+    const res = importSpinorama(currentRows, { ...currentMeta, equip_id: equipId });
+    if (!res.ok) {
+      errEl.textContent = res.reason;
+      return;
+    }
     errEl.textContent = 'Spinorama data applied';
     applyBtn.disabled = true;
   });

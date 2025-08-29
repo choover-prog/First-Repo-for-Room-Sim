@@ -1,31 +1,41 @@
-import Papa from 'papaparse';
+import { parseCSV } from '../lib/csv-lite.js';
 import { SpinCSVRow, SpinSet } from '../types/spin.js';
 import { setSpinForEquipment } from '../lib/spin/store.js';
 
-export function parseSpinoramaCSV(text, meta = {}) {
-  const result = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true });
-  if (result.errors && result.errors.length) {
-    return { ok: false, reason: result.errors[0].message };
-  }
-  const headers = result.meta.fields || [];
+export async function parseSpinCSV(file) {
+  const text = await file.text();
+  const { rows } = parseCSV(text);
+  return rows; // array of objects keyed by header
+}
+
+export function normalizeSpinRows(rows, meta = {}) {
+  const headers = rows.length ? Object.keys(rows[0]) : [];
   if (!headers.includes('freq_hz') || !headers.includes('on_axis_db')) {
     return { ok: false, reason: 'missing required columns freq_hz and on_axis_db' };
   }
-  const rows = [];
+  const validRows = [];
   let lastFreq = 0;
-  for (const r of result.data) {
-    const parsed = SpinCSVRow.safeParse(r);
+  for (const r of rows) {
+    const parsed = SpinCSVRow.safeParse({
+      freq_hz: Number(r.freq_hz),
+      on_axis_db: Number(r.on_axis_db),
+      listening_window_db: r.listening_window_db !== undefined && r.listening_window_db !== '' ? Number(r.listening_window_db) : undefined,
+      early_reflections_db: r.early_reflections_db !== undefined && r.early_reflections_db !== '' ? Number(r.early_reflections_db) : undefined,
+      sound_power_db: r.sound_power_db !== undefined && r.sound_power_db !== '' ? Number(r.sound_power_db) : undefined,
+      di_listening_window_db: r.di_listening_window_db !== undefined && r.di_listening_window_db !== '' ? Number(r.di_listening_window_db) : undefined,
+      di_sound_power_db: r.di_sound_power_db !== undefined && r.di_sound_power_db !== '' ? Number(r.di_sound_power_db) : undefined,
+    });
     if (!parsed.success) return { ok: false, reason: parsed.error.message };
     if (parsed.data.freq_hz <= lastFreq) {
       return { ok: false, reason: 'freq_hz must be strictly increasing' };
     }
-    rows.push(parsed.data);
+    validRows.push(parsed.data);
     lastFreq = parsed.data.freq_hz;
   }
-  if (rows.length < 64) {
+  if (validRows.length < 64) {
     return { ok: false, reason: 'not enough rows (min 64)' };
   }
-  if (rows[0].freq_hz > 30 || rows[rows.length - 1].freq_hz < 18000) {
+  if (validRows[0].freq_hz > 30 || validRows[validRows.length - 1].freq_hz < 18000) {
     return { ok: false, reason: 'frequency range must cover roughly 20-20kHz' };
   }
   let confidence = 0.4;
@@ -38,7 +48,7 @@ export function parseSpinoramaCSV(text, meta = {}) {
     equip_id: meta.equip_id,
     brand: meta.brand,
     model: meta.model,
-    rows,
+    rows: validRows,
     confidence_0_1: confidence,
     source: meta.source,
     verified: confidence >= 0.7
@@ -48,8 +58,13 @@ export function parseSpinoramaCSV(text, meta = {}) {
   return { ok: true, data: validated.data };
 }
 
-export function importSpinorama(text, meta = {}) {
-  const res = parseSpinoramaCSV(text, meta);
+export function parseSpinoramaCSV(text, meta = {}) {
+  const { rows } = parseCSV(text);
+  return normalizeSpinRows(rows, meta);
+}
+
+export function importSpinorama(rows, meta = {}) {
+  const res = normalizeSpinRows(rows, meta);
   if (!res.ok) return res;
   const spin = res.data;
   let equipId = spin.equip_id;

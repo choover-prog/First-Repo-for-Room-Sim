@@ -16,11 +16,12 @@
       <div id="view" class="viewer">
         <div id="measureLabel" class="measure-label" style="display:none">0.00 m</div>
       </div>
-      <div id="paneTop" class="pane top" aria-label="Global Menu"></div>
-      <div id="paneLeft" class="pane left" aria-label="Visual Overlays"></div>
-      <div id="paneRight" class="pane right" aria-label="Equipment & Cart"></div>
-      <div id="paneBottom" class="pane bottom" aria-label="Calibration & AI"></div>
+      <div id="paneTop" class="pane top" aria-label="Global Menu" data-pane-id="top"></div>
+      <div id="paneLeft" class="pane left" aria-label="Visual Overlays" data-pane-id="left"></div>
+      <div id="paneRight" class="pane right" aria-label="Equipment & Cart" data-pane-id="right"></div>
+      <div id="paneBottom" class="pane bottom" aria-label="Calibration & AI" data-pane-id="bottom"></div>
     </div>
+    <button id="btnRestorePane" aria-label="Restore Pane" disabled>Restore Pane</button>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

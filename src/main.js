@@ -7,7 +7,8 @@ import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
-import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF } from './lib/report.js';
+import { PlacementLayer } from './render/PlacementLayer.js';
+import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF, registerExportHook } from './lib/report.js';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
@@ -264,6 +265,10 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 camera.position.set(4, 2, 6);
+
+// Expose for placement layer interactions
+window._placementRenderer = renderer;
+window._placementCamera = camera;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -832,6 +837,20 @@ function applyMicLayout(name) {
     micGroup.add(m);
   });
 }
+
+// Placement layer for speakers and listener
+const placement = new PlacementLayer(scene);
+
+document.getElementById('btnAddSpeaker')?.addEventListener('click', () => {
+  const id = 'SPK' + Date.now();
+  placement.addSpeaker(id, { x: 0, y: 1, z: 0 });
+});
+
+document.getElementById('btnSetMLP')?.addEventListener('click', () => {
+  placement.setMLP({ x: 0, y: 1, z: 0 });
+});
+
+registerExportHook(() => placement.getState());
 
 // Populate mic layout dropdown
 (function initMicLayouts() {

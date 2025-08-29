@@ -53,3 +53,7 @@ Select mic layouts (`micLayoutSel`) and export their positions as JSON (`btnExpo
 
 ### PDF Export
 `btnExportPDF` captures the canvas and selections into a basic PDF report.
+
+### Speaker/Listener Placement
+`Add Speaker` drops an orange pin you can drag around the floor. `Set Listening Position` places the green main listening point.
+Pins persist between sessions and export with the JSON report.

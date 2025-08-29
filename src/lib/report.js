@@ -4,6 +4,23 @@
  */
 import jsPDF from './jspdf-stub.js';
 
+// Hooks allow modules to contribute extra data to exports
+const exportHooks = [];
+export function registerExportHook(fn) {
+  if (typeof fn === 'function') exportHooks.push(fn);
+}
+
+function runExportHooks(target) {
+  exportHooks.forEach(fn => {
+    try {
+      const res = fn();
+      if (res) target.placement = res;
+    } catch (e) {
+      console.warn('export hook failed', e);
+    }
+  });
+}
+
 /**
  * Capture canvas as PNG and return as blob
  * @param {HTMLCanvasElement} canvas - Canvas element to capture
@@ -80,8 +97,7 @@ export function downloadJSON(data, filename) {
  */
 export function generateRoomReport(roomData, heatmapData, measurements, equipment) {
   const timestamp = new Date().toISOString();
-  
-  return {
+  const report = {
     metadata: {
       exportDate: timestamp,
       version: '1.0.0',
@@ -106,6 +122,9 @@ export function generateRoomReport(roomData, heatmapData, measurements, equipmen
       axesVisible: true
     }
   };
+
+  runExportHooks(report);
+  return report;
 }
 
 /**

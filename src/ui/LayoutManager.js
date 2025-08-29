@@ -1,3 +1,5 @@
+import { resetSizes } from './layout.ts';
+
 const LayoutManager = (() => {
   const panes = new Map();
   const collapsedStack = [];
@@ -16,13 +18,13 @@ const LayoutManager = (() => {
   function saveState() {
     try {
       const state = getState();
-      sessionStorage.setItem('layout.state', JSON.stringify(state));
+      localStorage.setItem('layout.state', JSON.stringify(state));
     } catch (_) {}
   }
 
   function loadState() {
     try {
-      const raw = sessionStorage.getItem('layout.state');
+      const raw = localStorage.getItem('layout.state');
       if (!raw) return;
       const state = JSON.parse(raw);
       if (state && state.panes) {
@@ -55,16 +57,19 @@ const LayoutManager = (() => {
     const sizeProp = isSide ? 'width' : 'height';
     const collapsedSize = isSide ? '16px' : id === 'bottom' ? '18px' : '22px';
 
-    // Capture size before toggling collapse so restore works correctly
-    if (bool) {
-      if (!el.dataset.prevSize) {
-        const rect = el.getBoundingClientRect();
-        const cur = (isSide ? rect.width : rect.height) + 'px';
-        el.dataset.prevSize = cur;
-      }
+    if (bool && !el.dataset.prevSize) {
+      const rect = el.getBoundingClientRect();
+      const cur = (isSide ? rect.width : rect.height) + 'px';
+      el.dataset.prevSize = cur;
     }
 
-    el.classList.toggle('is-collapsed', bool);
+    const body = el.querySelector('.pane-body');
+    if (body) {
+      body.classList.toggle('is-collapsed', bool);
+      if (bool) body.setAttribute('aria-hidden', 'true');
+      else body.removeAttribute('aria-hidden');
+    }
+
     const btn = el.querySelector('.btn-collapse');
     if (btn) {
       if (bool) {
@@ -76,19 +81,6 @@ const LayoutManager = (() => {
 
     if (bool) {
       el.style[sizeProp] = collapsedSize;
-    } else {
-      const prev = el.dataset.prevSize;
-      if (prev) {
-        el.style[sizeProp] = prev;
-        delete el.dataset.prevSize;
-      }
-    }
-    const body = el.querySelector('.pane-body');
-    if (body) {
-      if (bool) body.setAttribute('aria-hidden', 'true');
-      else body.removeAttribute('aria-hidden');
-    }
-    if (bool) {
       collapsedStack.push(id);
       const hint = document.createElement('div');
       hint.className = 'restore-hint';
@@ -97,6 +89,11 @@ const LayoutManager = (() => {
       el.appendChild(hint);
       setTimeout(() => hint.remove(), 2000);
     } else {
+      const prev = el.dataset.prevSize;
+      if (prev) {
+        el.style[sizeProp] = prev;
+        delete el.dataset.prevSize;
+      }
       const idx = collapsedStack.lastIndexOf(id);
       if (idx >= 0) collapsedStack.splice(idx, 1);
     }
@@ -149,7 +146,26 @@ const LayoutManager = (() => {
     return { panes: panesState, lastCollapsed: collapsedStack[collapsedStack.length - 1] || null, fullscreenId: activeFS };
   }
 
-  return { init, registerPane, setCollapsed, setFullscreen, restoreLastCollapsed, getState };
+  function resetLayout() {
+    localStorage.removeItem('layout.state');
+    localStorage.removeItem('layout.v1');
+    collapsedStack.length = 0;
+    panes.forEach((p) => {
+      const body = p.el.querySelector('.pane-body');
+      if (body) {
+        body.classList.remove('is-collapsed');
+        body.removeAttribute('aria-hidden');
+      }
+      p.el.style.width = '';
+      p.el.style.height = '';
+      p.collapsed = false;
+    });
+    resetSizes();
+    updateRestoreButton();
+    saveState();
+  }
+
+  return { init, registerPane, setCollapsed, setFullscreen, restoreLastCollapsed, getState, resetLayout };
 })();
 
 export default LayoutManager;

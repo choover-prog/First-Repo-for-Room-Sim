@@ -2,6 +2,9 @@ import { requiredWattsToHitSPL, headroomDb } from '../lib/spl.js';
 import { simplePreferenceScore } from '../lib/preference.js';
 import { confidenceFromQuality, blendScore, tierBadge } from '../lib/accuracy.js';
 import { getPersonaConfig, isTooltipsEnabled, setTooltipsEnabled } from '../lib/persona.js';
+import { getSpin } from '../lib/spin/store.js';
+import { SpinoramaBadge } from '../ui/Badges.js';
+import { mountInto, PANE_IDS } from '../ui/panes.ts';
 
 async function loadJSON(url) {
   const r = await fetch(url);
@@ -25,15 +28,10 @@ function tipAttr(key, text) {
 }
 
 export function mountEquipmentPanel() {
-  const rightPane = document.getElementById('paneRight');
-  if (!rightPane) {
-    console.error('[UI] paneRight not found');
-    return;
-  }
   const personaCfg = getPersonaConfig();
   const root = el(`
-    <div style="margin-top:12px">
-      <h2 style="font-size:16px;margin:8px 0">Equipment</h2>
+    <div id="equipment-pane" class="section">
+      <h3>Equipment</h3>
       <div class="row" ${tipAttr('selectEq','Pick a speaker and amp to evaluate headroom')} >
         <select id="spSel"></select>
         <select id="ampSel"></select>
@@ -49,9 +47,10 @@ export function mountEquipmentPanel() {
       <div id="eqpTier" class="muted" style="margin:6px 0"></div>
       <div id="eqpStats" class="muted"></div>
       <div id="eqpWarn" class="muted" style="color:#ffb3b3"></div>
+      <div id="equipment-spin-section"></div>
     </div>
   `);
-  rightPane.appendChild(root);
+  mountInto(PANE_IDS.right, root);
 
   const spSel  = root.querySelector('#spSel');
   const ampSel = root.querySelector('#ampSel');
@@ -88,17 +87,19 @@ export function mountEquipmentPanel() {
     });
     const conf = confidenceFromQuality(q);
     const shownPref = blendScore(rawPref, conf);
-
-    const spinBadge = spData.spinorama && spData.spinorama.freq_hz && spData.spinorama.freq_hz.length
-      ? '<span style="margin-left:4px;padding:2px 6px;border-radius:6px;background:#22b8cf;color:#0b0d10;font-size:10px">spin✓</span>'
-      : '';
+    const spin = getSpin(spSel.value.replace('.json',''));
     stats.innerHTML = `
-      Speaker: <b>${spData.brand} ${spData.model}</b>${spinBadge} (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
+      Speaker: <b class="speaker-name">${spData.brand} ${spData.model}</b> (Sens ${spData.sensitivity_db} dB, F3 ${spData.f_low_f3_hz} Hz)<br/>
       Amp: <b>${ampData.brand} ${ampData.model}</b> (8Ω ${ampData.power_w_8ohm_all || 'n/a'} W)<br/>
       Preference (raw ${rawPref.toFixed(1)}), shown: <b>${shownPref.toFixed(1)}/10</b><br/>
       Required power @${distance}m for ${target} dB peaks: <b>${wattsReq.toFixed(0)} W</b><br/>
       Headroom (8Ω rated): <b>${head.toFixed(1)} dB</b>
     `;
+    if (spin && spin.verified) {
+      const badge = SpinoramaBadge();
+      badge.setAttribute('title', `CEA-2034 data imported; confidence: ${spin.confidence_0_1.toFixed(2)}; source: ${spin.source || 'N/A'}`);
+      stats.querySelector('.speaker-name')?.appendChild(badge);
+    }
     warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';
   }
 

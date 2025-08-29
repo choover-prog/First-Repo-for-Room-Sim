@@ -1,0 +1,13 @@
+.eq-badge {
+  display:inline-block;
+  padding:1px 6px;
+  border-radius:10px;
+  font-size:11px;
+  margin-left:6px;
+}
+.eq-badge.tierA { background:#173; color:#cfe; }
+.eq-badge.tierB { background:#432; color:#fed; }
+.eq-badge.tierC { background:#333; color:#ddd; }
+.eq-badge.spin { background:#0a3a4a; color:#7ef; }
+.status-row { font-size:12px; color:#ccc; margin:4px 0; }
+

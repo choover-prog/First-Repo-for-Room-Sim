@@ -2,6 +2,7 @@ import { AnyEquipment } from "../types/equipment";
 import { safeParse } from "../lib/validate";
 import { log } from "../lib/log";
 import { AnyEquipment as AnyEquipmentSchema } from "../types/equipment";
+import Papa from "papaparse";
 
 export type EquipmentItem = {
   id: string;
@@ -15,6 +16,7 @@ export type EquipmentItem = {
   spinVerified?: boolean;
   specs?: Record<string, string | number | null>;
   provenance?: { source: string; url?: string; date?: string };
+  warnings?: string[];
 };
 
 export type EquipmentManifest = {
@@ -60,6 +62,10 @@ function baseValidate(obj: any, id: string, kind: "speaker" | "amp"): EquipmentI
     });
     if (Object.keys(specs).length) item.specs = specs;
   }
+  const warnings: string[] = [];
+  if (item.price == null) warnings.push("price missing");
+  if (!item.spinVerified) warnings.push("data unverified");
+  if (warnings.length) item.warnings = warnings;
   return item;
 }
 
@@ -94,6 +100,34 @@ export async function fetchEquipment(): Promise<{ speakers: EquipmentItem[]; amp
     const id = path.split("/").pop()?.replace(/\.json$/i, "") || "";
     const item = validateAmp(obj, id);
     if (item) amps.push(item); else hadErrors = true;
+  }
+
+  try {
+    const res = await fetch("/data/speakers_starter.csv");
+    if (res.ok) {
+      const text = await res.text();
+      const parsed = Papa.parse(text, { header: true });
+      parsed.data.forEach((row: any, idx: number) => {
+        const id = row.id || `starter_sp_${idx}`;
+        const item = validateSpeaker(row, id);
+        if (item) speakers.push(item); else hadErrors = true;
+      });
+    }
+  } catch {
+    /* ignore */
+  }
+
+  try {
+    const arr = await loadJSON("/data/amps_starter.json");
+    if (Array.isArray(arr)) {
+      arr.forEach((row: any, idx: number) => {
+        const id = row.id || `starter_amp_${idx}`;
+        const item = validateAmp(row, id);
+        if (item) amps.push(item); else hadErrors = true;
+      });
+    }
+  } catch {
+    /* ignore */
   }
 
   const order = { A: 0, B: 1, C: 2 } as Record<string, number>;

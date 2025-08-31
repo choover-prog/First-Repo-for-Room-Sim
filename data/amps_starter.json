@@ -1,0 +1,4 @@
+[
+  {"id":"ampstarter1","brand":"AmpCo","model":"Amp100","specs":{"power_w_8ohm_all":100}},
+  {"id":"ampstarter2","brand":"AmpCo","model":"Amp200"}
+]

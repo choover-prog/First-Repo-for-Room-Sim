@@ -118,7 +118,11 @@ export function mountEquipmentPanel() {
       badge.setAttribute('title', `CEA-2034 data imported; confidence: ${spin.confidence_0_1.toFixed(2)}; source: ${spin.source || 'N/A'}`);
       stats.querySelector('.speaker-name')?.appendChild(badge);
     }
-    warn.textContent = head < 0 ? '⚠️ Underpowered for target SPL at this distance.' : '';
+    const warns = [];
+    if (head < 0) warns.push('⚠️ Underpowered for target SPL at this distance.');
+    if (spData?.warnings) warns.push(...spData.warnings);
+    if (ampData?.warnings) warns.push(...ampData.warnings);
+    warn.textContent = warns.join(' ');
   }
 
   function onChange() {

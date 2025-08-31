@@ -783,7 +783,15 @@ function recomputeReflections() {
     reflections.setHits([]);
     return;
   }
-  reflectionHits = firstOrder({ room: roomDims, speakers: state.speakers, mlp });
+  const hits = firstOrder({ room: roomDims, speakers: state.speakers, mlp });
+  reflectionHits = hits.map(h => {
+    const sp = state.speakers.find(s => s.id === h.speakerId);
+    return {
+      ...h,
+      speaker: sp ? [sp.pos.x, sp.pos.y, sp.pos.z] : undefined,
+      listener: [mlp.x, mlp.y, mlp.z]
+    };
+  });
   reflections.setHits(reflectionHits);
 }
 
@@ -795,6 +803,16 @@ reflectionsToggle?.addEventListener('change', () => {
 window.addEventListener('placement:changed', recomputeReflections);
 window.addEventListener('pointerup', () => {
   window.dispatchEvent(new CustomEvent('placement:changed'));
+});
+
+window.addEventListener('project:loaded', e => {
+  const data = e.detail || {};
+  if (Array.isArray(data.reflections)) {
+    reflectionHits = data.reflections;
+    reflectionsToggle.checked = data.reflections.length > 0;
+    reflections.setEnabled(reflectionsToggle.checked);
+    reflections.setHits(data.reflections);
+  }
 });
 
 const micGroup = new THREE.Group();

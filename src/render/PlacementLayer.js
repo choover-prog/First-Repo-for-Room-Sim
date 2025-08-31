@@ -11,6 +11,7 @@ export class PlacementLayer {
     this.speakers = new Map();
     this.listeners = new Map();
     this.selected = null;
+    this.ceilingZ = 3;
 
     this.raycaster = new THREE.Raycaster();
     this.pointer = new THREE.Vector2();
@@ -108,10 +109,11 @@ export class PlacementLayer {
 
   addSpeaker(id, pos) {
     if (this.speakers.has(id)) return;
+    const p = this.clampZ(pos);
     const geometry = new THREE.SphereGeometry(0.15, 16, 16);
     const material = new THREE.MeshStandardMaterial({ color: 0xff8800 });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.position.set(p.x, p.y, p.z);
     mesh.userData = { id, type: 'speaker', baseColor: 0xff8800 };
     this.scene.add(mesh);
     this.speakers.set(id, { mesh });
@@ -140,11 +142,12 @@ export class PlacementLayer {
   }
   addListener(id, pos, isMain = false) {
     if (this.listeners.has(id)) return;
+    const p = this.clampZ(pos);
     const geometry = new THREE.SphereGeometry(0.15, 16, 16);
     const color = isMain ? 0x00ff00 : 0x009900;
     const material = new THREE.MeshStandardMaterial({ color });
     const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(pos.x, pos.y, pos.z);
+    mesh.position.set(p.x, p.y, p.z);
     mesh.userData = { id, type: 'listener', baseColor: color };
     this.scene.add(mesh);
     this.listeners.set(id, { mesh, isMain });
@@ -224,11 +227,40 @@ export class PlacementLayer {
       const raw = localStorage.getItem('app.placement');
       if (!raw) return;
       const data = JSON.parse(raw);
-      data.speakers?.forEach(s => this.addSpeaker(s.id, s.pos));
-      data.listeners?.forEach(l => this.addListener(l.id, l.pos, l.isMain));
+      data.speakers?.forEach(s => this.addSpeaker(s.id, this.clampZ(s.pos)));
+      data.listeners?.forEach(l => this.addListener(l.id, this.clampZ(l.pos), l.isMain));
     } catch (e) {
       console.warn('Placement load failed', e);
     }
+  }
+
+  setCeiling(z) {
+    this.ceilingZ = z;
+    this.clampAll();
+  }
+
+  clampZ(pos) {
+    const min = 0.2;
+    const max = (this.ceilingZ || 0) - 0.2;
+    const p = { ...pos };
+    let clamped = false;
+    if (p.z < min) { p.z = min; clamped = true; }
+    if (p.z > max) { p.z = max; clamped = true; }
+    if (clamped) console.warn('Pin Z clamped to safe range');
+    return p;
+  }
+
+  clampAll() {
+    const min = 0.2;
+    const max = (this.ceilingZ || 0) - 0.2;
+    this.speakers.forEach(s => {
+      if (s.mesh.position.z < min) { s.mesh.position.z = min; console.warn('Pin Z clamped to safe range'); }
+      if (s.mesh.position.z > max) { s.mesh.position.z = max; console.warn('Pin Z clamped to safe range'); }
+    });
+    this.listeners.forEach(l => {
+      if (l.mesh.position.z < min) { l.mesh.position.z = min; console.warn('Pin Z clamped to safe range'); }
+      if (l.mesh.position.z > max) { l.mesh.position.z = max; console.warn('Pin Z clamped to safe range'); }
+    });
   }
 }
 

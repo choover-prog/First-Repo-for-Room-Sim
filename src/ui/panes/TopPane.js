@@ -24,6 +24,14 @@ export function mount(el) {
       makeButton('btnExportJSON', 'Export JSON'),
       makeButton('btnExportPDF', 'Export PDF'),
       makeDropdown('roomTemplateSel', ['Default']),
+      makeDropdown('testRoomSel', [
+        'baseline_6x8x2.6',
+        'small_4.2x5.5x2.4',
+        'l_room',
+        'low_ceiling_5x5x2.25'
+      ]),
+      makeToggle('tglPlaneNormals', 'Show plane normals'),
+      makeToggle('tglBouncePoints', 'Show bounce points'),
       makeButton('btnRestartOnboarding', 'Restart Onboarding'),
       makeButton('btnGuide', 'Guide'),
       makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')

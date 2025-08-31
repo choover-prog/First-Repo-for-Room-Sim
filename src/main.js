@@ -12,6 +12,7 @@ import { PlacementLayer } from './render/PlacementLayer.js';
 import { ReflectionsLayer } from './render/ReflectionsLayer.js';
 import { firstOrder } from './acoustics/ism.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF, registerExportHook } from './lib/report.js';
+import { RoomFactory } from './core/room.factory';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
@@ -129,6 +130,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'S' && e.shiftKey) {
+    try {
+      const id = roomFactory.getCurrentPresetId() || 'scene';
+      const blob = await captureCanvasPNG(renderer.domElement, `view-${id}.png`);
+      downloadBlobURL(blob, `view-${id}.png`);
+    } catch (err) {
+      console.warn('Snapshot failed', err);
+    }
+  }
+});
+
 document.addEventListener('fullscreenchange', () => {
   const inFS = !!document.fullscreenElement;
   document.body.classList.toggle('app-has-fullscreen', inFS);
@@ -147,7 +160,7 @@ function verifyPaneButtons() {
   const right = document.getElementById('paneRight');
   const bottom = document.getElementById('paneBottom');
   if (top) {
-    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel'].forEach(id => {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel','testRoomSel','tglPlaneNormals','tglBouncePoints'].forEach(id => {
       if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
     });
   }
@@ -306,6 +319,7 @@ let lfHeatmap = null;
 let badgeManager = null;
 let measurements = [];
 let currentPersona = null;
+const roomFactory = new RoomFactory(scene);
 
 // Pickable meshes (for measuring)
 let pickables = [];
@@ -804,6 +818,10 @@ window.addEventListener('placement:changed', recomputeReflections);
 window.addEventListener('pointerup', () => {
   window.dispatchEvent(new CustomEvent('placement:changed'));
 });
+window.addEventListener('sceneChanged', () => {
+  reflectionHits = [];
+  recomputeReflections();
+});
 
 window.addEventListener('project:loaded', e => {
   const data = e.detail || {};
@@ -844,6 +862,7 @@ function applyMicLayout(name) {
 
 // Placement layer for speakers and listeners
 const placement = new PlacementLayer(scene);
+placement.setCeiling(roomDims.H);
 
 registerExportHook(() => ({ placement: placement.getState() }));
 registerExportHook(() => ({ reflections: reflectionsToggle?.checked ? reflectionHits : [] }));
@@ -927,6 +946,24 @@ window.addEventListener('ui:action', async e => {
     case 'btnSetMLP':
       placement.markSelectedAsMLP();
       window.dispatchEvent(new CustomEvent('placement:changed'));
+      break;
+    case 'testRoomSel':
+      if (payload) {
+        const dims = await roomFactory.buildRoomFromPreset(payload);
+        if (dims) {
+          roomDims.L = dims.y;
+          roomDims.W = dims.x;
+          roomDims.H = dims.z;
+          placement.setCeiling(dims.z);
+          recomputeReflections();
+        }
+      }
+      break;
+    case 'tglPlaneNormals':
+      roomFactory.showNormals(!!payload);
+      break;
+    case 'tglBouncePoints':
+      reflections.setHits(payload ? reflectionHits : []);
       break;
   }
 });

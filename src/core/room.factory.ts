@@ -37,39 +37,53 @@ export async function buildRoomFromPreset(
 
   const mat = new THREE.MeshStandardMaterial({ color:0xdddddd, side:THREE.DoubleSide });
 
+  // floor sits on XY plane with Z-up, no rotation needed
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), mat.clone());
-  floor.rotation.x = -Math.PI/2;
   floor.receiveShadow = true; floor.castShadow = false;
   floor.userData.surfaceType = 'floor';
   group.add(floor);
 
-  const ceiling = floor.clone();
-  ceiling.rotation.x = Math.PI/2;
+  // ceiling mirrors the floor at +height, flip normal downward
+  const ceiling = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), mat.clone());
   ceiling.position.z = height;
+  ceiling.rotation.x = Math.PI; // face toward interior
+  ceiling.receiveShadow = true; ceiling.castShadow = false;
   ceiling.userData.surfaceType = 'ceiling';
   group.add(ceiling);
 
-  const wallGeoX = new THREE.PlaneGeometry(depth, height);
-  const wallGeoY = new THREE.PlaneGeometry(width, height);
+  // north/south walls (width × height planes, rotated around X)
+  const wallNorth = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat.clone());
+  wallNorth.position.set(0, depth/2, height/2);
+  wallNorth.rotation.x = Math.PI/2;
+  wallNorth.receiveShadow = true; wallNorth.castShadow = false;
+  wallNorth.userData.surfaceType = 'wall_north';
+  group.add(wallNorth);
 
-  const walls: Array<[string, number, number, number, number]> = [
-    ['wall_north', 0, depth/2, Math.PI, 0],
-    ['wall_south', 0, -depth/2, 0, 0],
-    ['wall_east', width/2, 0, -Math.PI/2, 1],
-    ['wall_west', -width/2, 0, Math.PI/2, 1]
-  ];
+  const wallSouth = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat.clone());
+  wallSouth.position.set(0, -depth/2, height/2);
+  wallSouth.rotation.x = -Math.PI/2;
+  wallSouth.receiveShadow = true; wallSouth.castShadow = false;
+  wallSouth.userData.surfaceType = 'wall_south';
+  group.add(wallSouth);
 
-  walls.forEach(([name, x, y, ry, axis])=>{
-    const geo = axis ? wallGeoX : wallGeoY;
-    const mesh = new THREE.Mesh(geo, mat.clone());
-    mesh.position.set(x, y, height/2);
-    mesh.rotation.y = ry;
-    mesh.receiveShadow = true; mesh.castShadow = false;
-    mesh.userData.surfaceType = name;
-    group.add(mesh);
-  });
+  // east/west walls (depth × height planes, rotated around Y)
+  const wallEast = new THREE.Mesh(new THREE.PlaneGeometry(height, depth), mat.clone());
+  wallEast.position.set(width/2, 0, height/2);
+  wallEast.rotation.y = -Math.PI/2;
+  wallEast.receiveShadow = true; wallEast.castShadow = false;
+  wallEast.userData.surfaceType = 'wall_east';
+  group.add(wallEast);
+
+  const wallWest = new THREE.Mesh(new THREE.PlaneGeometry(height, depth), mat.clone());
+  wallWest.position.set(-width/2, 0, height/2);
+  wallWest.rotation.y = Math.PI/2;
+  wallWest.receiveShadow = true; wallWest.castShadow = false;
+  wallWest.userData.surfaceType = 'wall_west';
+  group.add(wallWest);
 
   ctx.scene.add(group);
+  // ensure world matrices are up to date before fitting camera
+  group.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(group);
   fitCameraToBox(ctx.camera, ctx.controls, box);
 

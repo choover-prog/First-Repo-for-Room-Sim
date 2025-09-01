@@ -30,6 +30,15 @@ import LayoutManager from './ui/LayoutManager.js';
 import { mountBottomToolbar } from './panels/BottomToolbar.js';
 import { initResizers } from './ui/ResizerManager.js';
 
+// simple event bus using EventTarget
+const bus = (() => {
+  const et = new EventTarget();
+  return {
+    on: (type, fn) => et.addEventListener(type, (e) => fn(e.detail)),
+    emit: (type, detail) => et.dispatchEvent(new CustomEvent(type, { detail })),
+  };
+})();
+
 function enforceFourPanes() {
   const ids = ['paneTop', 'paneLeft', 'paneRight', 'paneBottom'];
   document.querySelectorAll('header, footer').forEach((node) => {
@@ -326,10 +335,7 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
-mountObjectToolbar({ scene, camera, controls, renderer });
-mountTopToolbar({ scene, camera, controls });
-initReflectionsAgent();
-buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls });
+  mountObjectToolbar({ scene, camera, controls, renderer });
 
 // Initialize new systems
 let lfHeatmap = null;
@@ -346,11 +352,23 @@ loadingManager.onError = (url) => {
   console.error(`Error loading ${url}. If using DRACO compression, place decoders in /public/libs/draco/`);
 };
 
-const loader = new GLTFLoader(loadingManager);
-const dracoLoader = new DRACOLoader(loadingManager);
-dracoLoader.setDecoderPath('/libs/draco/');
-loader.setDRACOLoader(dracoLoader);
-let root = null;
+  const loader = new GLTFLoader(loadingManager);
+  const dracoLoader = new DRACOLoader(loadingManager);
+  dracoLoader.setDecoderPath('/libs/draco/');
+  loader.setDRACOLoader(dracoLoader);
+
+  // mount UI after loaders are ready
+  mountTopToolbar({
+    scene,
+    camera,
+    controls,
+    bus,
+    loaders: { gltf: (url) => loader.loadAsync ? loader.loadAsync(url) : new Promise((res, rej) => loader.load(url, res, undefined, rej)) },
+  });
+  initReflectionsAgent({ bus, recomputeReflections: (id) => console.info('Reflections recompute', id) });
+  buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls, bus });
+
+  let root = null;
 
 // Initialize new systems
 lfHeatmap = new LFHeatmapLayer(scene);

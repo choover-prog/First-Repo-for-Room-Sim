@@ -1,14 +1,13 @@
-import { ROOM_CHANGED, getRoom } from '../state/room.slice';
+import { ROOM_CHANGED } from '../state/room.slice';
 
-let timer: number | null = null;
-
-export function initReflectionsAgent(){
-  window.addEventListener(ROOM_CHANGED, () => {
-    if(timer) clearTimeout(timer);
-    timer = window.setTimeout(()=>{
-      // placeholder recompute
-      console.info('Reflections recompute', getRoom().presetId);
-      timer = null;
-    },150);
+// Listen for room changes and recompute reflections once per change
+export function initReflectionsAgent(ctx: { bus: any; recomputeReflections: (id: string) => void; reflectionsCache?: Map<any, any> }) {
+  let timer: any;
+  ctx.bus.on(ROOM_CHANGED, (payload: any) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      ctx.reflectionsCache?.clear?.();
+      ctx.recomputeReflections(payload.presetId);
+    }, 150);
   });
 }

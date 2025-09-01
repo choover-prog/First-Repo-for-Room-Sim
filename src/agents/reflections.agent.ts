@@ -8,6 +8,7 @@ export function initReflectionsAgent(){
     timer = window.setTimeout(()=>{
       // placeholder recompute
       console.info('Reflections recompute', getRoom().presetId);
+      timer = null;
     },150);
   });
 }

@@ -18,6 +18,7 @@ import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { mountTopToolbar } from './ui/TopToolbar';
 import { initReflectionsAgent } from './agents/reflections.agent';
 import { buildRoomFromPreset } from './core/room.factory';
+import { toast } from './core/toast';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { PlacementLayer } from './render/PlacementLayer.js';
@@ -247,7 +248,7 @@ const measureFileInput = document.getElementById('measureFile');
 const btnImportMeasurements = document.getElementById('btnImportMeasurements');
 
 btnImportRoom?.addEventListener('click', () => roomFileInput?.click());
-btnLoadSample?.addEventListener('click', () => loadURL('/models/sample.glb'));
+btnLoadSample?.addEventListener('click', () => buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls }));
 btnImportMeasurements?.addEventListener('click', () => measureFileInput?.click());
 
 // New UI elements
@@ -333,9 +334,18 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
+function removeStrayDebugMeshes(scene){
+  const stray = scene.children.filter(o =>
+    o.geometry?.type === 'BoxGeometry' && (!o.name || /debug|placeholder|cube/i.test(o.name))
+  );
+  stray.forEach(o => scene.remove(o));
+  if(stray.length) toast.warn(`Removed ${stray.length} stray debug mesh(es)`);
+}
+
 mountObjectToolbar({ scene, camera, controls, renderer });
 mountTopToolbar({ scene, camera, controls });
 initReflectionsAgent();
+removeStrayDebugMeshes(scene);
 buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls });
 
 // Initialize new systems

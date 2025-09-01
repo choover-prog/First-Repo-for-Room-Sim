@@ -4,6 +4,7 @@ import { fitCameraToBox } from './camera.fit';
 import { toast } from './toast';
 import { assert } from './assert';
 import { roomStore } from '../state/room.slice';
+import { attachRoom } from './room.session';
 
 export async function buildRoomFromPreset(
   presetId: string,
@@ -26,10 +27,6 @@ export async function buildRoomFromPreset(
   }
 
   const [width, depth, height] = def.size;
-  // remove previous room if any
-  const old = ctx.scene.getObjectByName('RoomGroup');
-  if(old) ctx.scene.remove(old);
-
   const group = new THREE.Group();
   group.name = 'RoomGroup';
   group.matrixAutoUpdate = false;
@@ -81,7 +78,7 @@ export async function buildRoomFromPreset(
   wallWest.userData.surfaceType = 'wall_west';
   group.add(wallWest);
 
-  ctx.scene.add(group);
+  attachRoom(ctx.scene, group);
   // ensure world matrices are up to date before fitting camera
   group.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(group);

@@ -1,6 +1,7 @@
 import { makeToggle } from './toggles';
 import { getOverlays, setCeilingOpacity, toggleCeilingVisibilityQuick } from '../state/overlays.slice';
 import { buildRoomFromPreset } from '../core/room.factory';
+import { getRoom } from '../state/room.slice';
 
 export function mountTopToolbar(ctx: { scene: any; camera: any; controls: any }){
   const toolbar = document.getElementById('top-toolbar');
@@ -10,8 +11,13 @@ export function mountTopToolbar(ctx: { scene: any; camera: any; controls: any })
   const roomSel = document.createElement('select');
   roomSel.id = 'roomPreset';
   ['baseline_6x8x2.6','small_4.2x5.5x2.4','l_room','low_ceiling_5x5x2.25'].forEach(id=>{
-    const opt = document.createElement('option'); opt.value = id; opt.textContent = id; roomSel.appendChild(opt);
+    const opt = document.createElement('option');
+    opt.value = id;
+    opt.textContent = id;
+    roomSel.appendChild(opt);
   });
+  const cur = getRoom().presetId;
+  if(cur) roomSel.value = cur;
   roomSel.addEventListener('change', ()=> buildRoomFromPreset(roomSel.value, ctx));
   toolbar.appendChild(roomSel);
 

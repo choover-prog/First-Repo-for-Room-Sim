@@ -299,6 +299,17 @@ let glErrorLogged = false;
 const scene  = new THREE.Scene();
 scene.background = new THREE.Color(0x0b0d10);
 
+// Scene graph groups
+const roomGroup = new THREE.Group();
+roomGroup.name = 'roomGroup';
+const objectGroup = new THREE.Group();
+objectGroup.name = 'objectGroup';
+const overlayGroup = new THREE.Group();
+overlayGroup.name = 'overlayGroup';
+scene.add(roomGroup);
+scene.add(objectGroup);
+scene.add(overlayGroup);
+
 const camera = new THREE.PerspectiveCamera(
   60,
   container.clientWidth / container.clientHeight,
@@ -329,14 +340,14 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
-mountObjectToolbar({ scene, camera, controls, renderer });
+mountObjectToolbar({ scene, camera, controls, renderer, root: objectGroup });
 
 // Initialize new systems
 let lfHeatmap = null;
 let badgeManager = null;
 let measurements = [];
 let currentPersona = null;
-const roomFactory = new RoomFactory(scene);
+const roomFactory = new RoomFactory(roomGroup);
 
 // Pickable meshes (for measuring)
 let pickables = [];
@@ -878,7 +889,7 @@ function applyMicLayout(name) {
 }
 
 // Placement layer for speakers and listeners
-const placement = new PlacementLayer(scene);
+const placement = new PlacementLayer(objectGroup);
 placement.setCeiling(roomDims.H);
 
 registerExportHook(() => ({ placement: placement.getState() }));

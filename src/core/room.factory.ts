@@ -3,14 +3,14 @@ import * as THREE from 'three';
 interface RoomPreset { id: string; dimensions: { x: number; y: number; z: number }; }
 
 export class RoomFactory {
-  private scene: THREE.Scene;
+  private scene: THREE.Object3D;
   private manifest: RoomPreset[] | null = null;
   private group: THREE.Group | null = null;
   private normals: THREE.Object3D[] = [];
   private showNormalsFlag = false;
   private currentId: string | null = null;
 
-  constructor(scene: THREE.Scene) {
+  constructor(scene: THREE.Object3D) {
     this.scene = scene;
   }
 

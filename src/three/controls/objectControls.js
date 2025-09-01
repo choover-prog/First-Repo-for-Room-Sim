@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { TransformControls } from 'three/examples/jsm/controls/TransformControls.js';
 import { subscribe, dispatch } from '../../state/store.js';
 
-let scene, camera, renderer, orbit, control, raycaster, dom;
+let scene, camera, renderer, orbit, control, raycaster, dom, rootGroup;
 let snapEnabled = true, snapSize = 0.0762; // meters
 const selectable = new Set();   // meshes/groups we can select (speakers, mlp, etc.)
 let selected = null;
@@ -16,7 +16,8 @@ export function unregisterSelectable(obj){
 }
 
 export function initObjectControls(ctx){
-  ({ scene, camera, controls:orbit, renderer } = ctx);
+  ({ scene, camera, controls:orbit, renderer, root:rootGroup } = ctx);
+  if (!rootGroup) rootGroup = scene;
   dom = renderer.domElement;
   raycaster = new THREE.Raycaster();
 
@@ -87,8 +88,11 @@ function onPointerDown(e){
 
 function getRootRegistered(obj){
   let p = obj;
-  while (p && p.parent){ if (selectable.has(p)) return p; p = p.parent; }
-  return selectable.has(obj) ? obj : null;
+  while (p && p.parent && p !== rootGroup){
+    if (selectable.has(p)) return p;
+    p = p.parent;
+  }
+  return selectable.has(p) ? p : null;
 }
 
 function select(obj){

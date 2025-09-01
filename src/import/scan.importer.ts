@@ -6,6 +6,7 @@ import { ROOM_CHANGED } from '../state/room.slice';
 export async function importRoomScan(fileOrUrl: File | string, ctx: { scene: THREE.Scene; loaders: any; bus: any; core?: any; controls?: any }) {
   const gltf = await ctx.loaders.gltf(fileOrUrl);
   const root = gltf.scene;
+  root.userData.af_tag = 'APP';
   root.updateMatrixWorld(true);
 
   const box = new THREE.Box3().setFromObject(root);

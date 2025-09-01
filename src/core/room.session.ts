@@ -17,14 +17,29 @@ export const artifacts: RoomArtifacts = {
   debugGroup: new THREE.Group(),
 };
 
+function isDescendant(parent: THREE.Object3D, child: THREE.Object3D | null | undefined): boolean {
+  let n = child;
+  while (n) {
+    if (n === parent) return true;
+    n = n.parent as THREE.Object3D | null;
+  }
+  return false;
+}
+
 export function ensureAppRoot(scene: THREE.Scene) {
   if (!artifacts.appRoot.parent) {
     artifacts.appRoot.name = 'AppRoot';
     scene.add(artifacts.appRoot);
   }
   if (!artifacts.debugGroup.parent) {
+    artifacts.debugGroup = new THREE.Group();
     artifacts.debugGroup.name = 'DebugHelpers';
     artifacts.appRoot.add(artifacts.debugGroup);
+
+    // persistent grid for orientation
+    const grid = new THREE.GridHelper(10, 10);
+    grid.name = 'GridHelper';
+    artifacts.debugGroup.add(grid);
   }
   setLayerDeep(artifacts.appRoot, LAYERS.APP);
 }
@@ -40,7 +55,7 @@ export function purgeLegacyStrays(scene: THREE.Scene) {
   const killName = /^(FitBox|bboxHelper|MediumRoom|Sample(Room)?|Placeholder|Debug(Room)?|Sim\s?Cube|Cube|Box)$/i;
   const toRemove: THREE.Object3D[] = [];
   scene.traverse((o: any) => {
-    if (artifacts.appRoot.contains(o)) return;
+    if (isDescendant(artifacts.appRoot, o)) return;
     const isMesh = o.isMesh === true;
     const isBox = isMesh && (o.geometry?.type === 'BoxGeometry' || o.geometry?.type === 'BoxBufferGeometry');
     const strayName = killName.test(o.name || '');
@@ -59,15 +74,13 @@ export function purgeLegacyStrays(scene: THREE.Scene) {
 }
 
 export function resetAppRoot(scene: THREE.Scene) {
-  const keep = artifacts.appRoot;
-  const kids = [...keep.children];
-  kids.forEach((c) => {
-    keep.remove(c);
+  ensureAppRoot(scene);
+  const keep = artifacts.debugGroup;
+  const toClear = artifacts.appRoot.children.filter((c) => c !== keep);
+  toClear.forEach((c) => {
+    artifacts.appRoot.remove(c);
     deepDispose(c);
   });
-  artifacts.debugGroup = new THREE.Group();
-  artifacts.debugGroup.name = 'DebugHelpers';
-  artifacts.appRoot.add(artifacts.debugGroup);
   artifacts.roomGroup = null;
   artifacts.scanGroup = null;
   artifacts.entitiesGroup = null;

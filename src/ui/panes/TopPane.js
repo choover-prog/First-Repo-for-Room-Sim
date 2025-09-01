@@ -1,4 +1,5 @@
 import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js';
+import { makeToggle } from '../utils/toggles.js';
 
 export function mount(el) {
   if (!el) return;
@@ -24,9 +25,34 @@ export function mount(el) {
       makeButton('btnExportJSON', 'Export JSON'),
       makeButton('btnExportPDF', 'Export PDF'),
       makeDropdown('roomTemplateSel', ['Default']),
-      makeButton('btnRestartOnboarding', 'Restart Onboarding'),
-      makeButton('btnGuide', 'Guide'),
-      makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')
+      makeDropdown('testRoomSel', [
+        'baseline_6x8x2.6',
+        'small_4.2x5.5x2.4',
+        'l_room',
+        'low_ceiling_5x5x2.25'
+      ]),
+      makeToggle({
+        id: 'tglPlaneNormals',
+        label: 'Show plane normals',
+        onChange: (checked) =>
+          window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'tglPlaneNormals', payload: checked } }))
+      }),
+      makeToggle({
+        id: 'tglBouncePoints',
+        label: 'Show bounce points',
+        onChange: (checked) =>
+          window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'tglBouncePoints', payload: checked } }))
+      })
     );
+
+    const btnRestart = makeButton('btnRestartOnboarding', 'Restart Onboarding');
+    const btnGuide = makeButton('btnGuide', 'Guide');
+    const btnReset = makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes');
+    btnReset.dataset.cmd = 'reset-layout';
+    const btnRestore = makeButton('btnRestoreLayout', 'Restore', 'Restore panes');
+    btnRestore.dataset.cmd = 'restore-layout';
+
+    sec.append(btnRestart, btnGuide, btnReset, btnRestore);
+
     content.appendChild(sec);
 }

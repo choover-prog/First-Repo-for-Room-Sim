@@ -1,3 +1,12 @@
+(function guardCustomElementsDefineOnce(){
+  if (window.__ce_guard_installed) return;
+  window.__ce_guard_installed = true;
+  const _define = customElements.define.bind(customElements);
+  customElements.define = (name, ctor, opts) => {
+    if (customElements.get(name)) return; // ignore duplicate defines
+    _define(name, ctor, opts);
+  };
+})();
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -12,6 +21,7 @@ import { PlacementLayer } from './render/PlacementLayer.js';
 import { ReflectionsLayer } from './render/ReflectionsLayer.js';
 import { firstOrder } from './acoustics/ism.js';
 import { captureCanvasPNG, downloadBlobURL, generateRoomReport, exportHeatmapData, downloadJSON, exportPDF, registerExportHook } from './lib/report.js';
+import { RoomFactory } from './core/room.factory';
 import { BadgeManager } from './ui/Badges.js';
 import { installFullscreenGuard } from './lib/fullscreen-guard.js';
 import './ui/layout.css';
@@ -99,16 +109,38 @@ btnFullscreen?.addEventListener('click', async () => {
   }
 });
 
-// Mount new UI panes
-mountTopPane(document.getElementById('paneTop'));
-mountLeftPane(document.getElementById('paneLeft'));
-mountRightPane(document.getElementById('paneRight'));
-  mountEquipmentPanel();
-  mountSpinoramaImport();
-  mountBottomToolbar();
-  initResizers();
 
-  LayoutManager.init(document);
+// Mount new UI panes
+function safeMount(fn, el) {
+  try {
+    fn(el);
+  } catch (err) {
+    console.warn('Pane failed to load', err);
+    if (el) {
+      const banner = document.createElement('div');
+      banner.className = 'pane-error';
+      banner.textContent = 'Pane failed to load. See console for details.';
+      el.appendChild(banner);
+    }
+  }
+}
+safeMount(mountTopPane, document.getElementById('paneTop'));
+safeMount(mountLeftPane, document.getElementById('paneLeft'));
+safeMount(mountRightPane, document.getElementById('paneRight'));
+mountEquipmentPanel();
+mountSpinoramaImport();
+mountBottomToolbar();
+initResizers();
+
+LayoutManager.init(document);
+const layout = {
+  reset: () => LayoutManager.resetLayout(),
+  restoreDefault: () => LayoutManager.restoreLastCollapsed()
+};
+const resetBtn = document.querySelector('[data-cmd="reset-layout"]');
+if (resetBtn) resetBtn.onclick = layout.reset;
+const restoreBtn = document.querySelector('[data-cmd="restore-layout"]');
+if (restoreBtn) restoreBtn.onclick = layout.restoreDefault;
 ['top','left','right','bottom'].forEach((side) => {
   const el = document.querySelector(`.pane[data-pane-id="${side}"]`);
   const collapseBtn = el?.querySelector('.btn-collapse');
@@ -129,6 +161,18 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+document.addEventListener('keydown', async (e) => {
+  if (e.key === 'S' && e.shiftKey) {
+    try {
+      const id = roomFactory.getCurrentPresetId() || 'scene';
+      const blob = await captureCanvasPNG(renderer.domElement, `view-${id}.png`);
+      downloadBlobURL(blob, `view-${id}.png`);
+    } catch (err) {
+      console.warn('Snapshot failed', err);
+    }
+  }
+});
+
 document.addEventListener('fullscreenchange', () => {
   const inFS = !!document.fullscreenElement;
   document.body.classList.toggle('app-has-fullscreen', inFS);
@@ -138,8 +182,6 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-document.getElementById('btnRestorePane')?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
-document.getElementById('btnResetLayout')?.addEventListener('click', () => LayoutManager.resetLayout());
 
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');
@@ -147,7 +189,7 @@ function verifyPaneButtons() {
   const right = document.getElementById('paneRight');
   const bottom = document.getElementById('paneBottom');
   if (top) {
-    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel'].forEach(id => {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestoreLayout','btnRestartOnboarding','btnGuide','roomTemplateSel','testRoomSel','tglPlaneNormals','tglBouncePoints'].forEach(id => {
       if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
     });
   }
@@ -183,23 +225,11 @@ function applyPaneState(state) {
 }
 
 function resetLayout() {
-  const defaults = {
-    top:    { open: true, size: 48 },
-    left:   { open: true, size: 280 },
-    right:  { open: true, size: 320 },
-    bottom: { open: true, size: 56 }
-  };
-  setPaneState(defaults);
-  applyPaneState(defaults);
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  camera.aspect = container.clientWidth / container.clientHeight;
-  camera.updateProjectionMatrix();
-  console.info('[UI] Layout reset');
+  LayoutManager.resetLayout();
 }
 
 applyPaneState(getPaneState());
 
-document.getElementById('btnResetLayout')?.addEventListener('click', resetLayout);
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey && e.altKey && e.key === '0') {
@@ -306,6 +336,7 @@ let lfHeatmap = null;
 let badgeManager = null;
 let measurements = [];
 let currentPersona = null;
+const roomFactory = new RoomFactory(scene);
 
 // Pickable meshes (for measuring)
 let pickables = [];
@@ -804,6 +835,10 @@ window.addEventListener('placement:changed', recomputeReflections);
 window.addEventListener('pointerup', () => {
   window.dispatchEvent(new CustomEvent('placement:changed'));
 });
+window.addEventListener('sceneChanged', () => {
+  reflectionHits = [];
+  recomputeReflections();
+});
 
 window.addEventListener('project:loaded', e => {
   const data = e.detail || {};
@@ -844,6 +879,7 @@ function applyMicLayout(name) {
 
 // Placement layer for speakers and listeners
 const placement = new PlacementLayer(scene);
+placement.setCeiling(roomDims.H);
 
 registerExportHook(() => ({ placement: placement.getState() }));
 registerExportHook(() => ({ reflections: reflectionsToggle?.checked ? reflectionHits : [] }));
@@ -928,5 +964,25 @@ window.addEventListener('ui:action', async e => {
       placement.markSelectedAsMLP();
       window.dispatchEvent(new CustomEvent('placement:changed'));
       break;
+    case 'testRoomSel':
+      if (payload) {
+        const dims = await roomFactory.buildRoomFromPreset(payload);
+        if (dims) {
+          roomDims.L = dims.y;
+          roomDims.W = dims.x;
+          roomDims.H = dims.z;
+          placement.setCeiling(dims.z);
+          recomputeReflections();
+        }
+      }
+      break;
+    case 'tglPlaneNormals':
+      roomFactory.showNormals(!!payload);
+      break;
+    case 'tglBouncePoints':
+      reflections.setHits(payload ? reflectionHits : []);
+      break;
   }
 });
+console.log('APP_READY');
+console.assert(renderer && scene && camera);

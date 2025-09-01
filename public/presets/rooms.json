@@ -1,0 +1,6 @@
+[
+  {"id":"baseline_6x8x2.6","dimensions":{"x":6,"y":8,"z":2.6}},
+  {"id":"small_4.2x5.5x2.4","dimensions":{"x":4.2,"y":5.5,"z":2.4}},
+  {"id":"l_room","dimensions":{"x":6,"y":8,"z":2.6}},
+  {"id":"low_ceiling_5x5x2.25","dimensions":{"x":5,"y":5,"z":2.25}}
+]

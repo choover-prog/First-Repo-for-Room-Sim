@@ -1,4 +1,5 @@
 import { makeButton, makeDropdown, mountSection, initPane } from '../controls.js';
+import { makeToggle } from '../toggles.ts';
 
 export function mount(el) {
   if (!el) return;
@@ -24,9 +25,30 @@ export function mount(el) {
       makeButton('btnExportJSON', 'Export JSON'),
       makeButton('btnExportPDF', 'Export PDF'),
       makeDropdown('roomTemplateSel', ['Default']),
+      makeToggle({
+        id: 'tglPlaneNormals',
+        label: 'Show plane normals',
+        onChange: (checked) =>
+          window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'tglPlaneNormals', payload: checked } }))
+      }),
+      makeToggle({
+        id: 'tglBouncePoints',
+        label: 'Show bounce points',
+        onChange: (checked) =>
+          window.dispatchEvent(new CustomEvent('ui:action', { detail: { id: 'tglBouncePoints', payload: checked } }))
+      }),
       makeButton('btnRestartOnboarding', 'Restart Onboarding'),
       makeButton('btnGuide', 'Guide'),
-      makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes')
+      (() => {
+        const btn = makeButton('btnResetLayout', 'Reset Layout', 'Reset all panes');
+        btn.dataset.cmd = 'reset-layout';
+        return btn;
+      })(),
+      (() => {
+        const btn = makeButton('btnRestoreLayout', 'Restore', 'Restore panes');
+        btn.dataset.cmd = 'restore-layout';
+        return btn;
+      })()
     );
     content.appendChild(sec);
 }

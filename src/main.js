@@ -1,3 +1,12 @@
+(function guardCustomElementsDefineOnce() {
+  if (window.__ce_guard_installed) return;
+  window.__ce_guard_installed = true;
+  const _define = customElements.define.bind(customElements);
+  customElements.define = (name, ctor, opts) => {
+    if (customElements.get(name)) return;
+    _define(name, ctor, opts);
+  };
+})();
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -100,15 +109,29 @@ btnFullscreen?.addEventListener('click', async () => {
 });
 
 // Mount new UI panes
-mountTopPane(document.getElementById('paneTop'));
-mountLeftPane(document.getElementById('paneLeft'));
-mountRightPane(document.getElementById('paneRight'));
-  mountEquipmentPanel();
-  mountSpinoramaImport();
-  mountBottomToolbar();
-  initResizers();
+function safeMount(fn, el) {
+  try {
+    fn(el);
+  } catch (err) {
+    console.warn('Pane failed to load', err);
+    if (el) {
+      const banner = document.createElement('div');
+      banner.className = 'pane-error';
+      banner.textContent = 'Pane failed to load. See console for details.';
+      el.appendChild(banner);
+    }
+  }
+}
 
-  LayoutManager.init(document);
+safeMount(mountTopPane, document.getElementById('paneTop'));
+safeMount(mountLeftPane, document.getElementById('paneLeft'));
+safeMount(mountRightPane, document.getElementById('paneRight'));
+safeMount(() => mountBottomToolbar(), document.getElementById('paneBottom'));
+mountEquipmentPanel();
+mountSpinoramaImport();
+initResizers();
+
+LayoutManager.init(document);
 ['top','left','right','bottom'].forEach((side) => {
   const el = document.querySelector(`.pane[data-pane-id="${side}"]`);
   const collapseBtn = el?.querySelector('.btn-collapse');
@@ -121,6 +144,15 @@ mountRightPane(document.getElementById('paneRight'));
   el?.querySelector('.btn-fullscreen')?.addEventListener('click', () => LayoutManager.setFullscreen(side, true));
 });
 
+
+const layout = {
+  reset: () => LayoutManager.resetLayout(),
+  restoreDefault: () => LayoutManager.restoreLastCollapsed()
+};
+const resetBtn = document.querySelector('[data-cmd="reset-layout"]');
+if (resetBtn) resetBtn.onclick = layout.reset;
+const restoreBtn = document.querySelector('[data-cmd="restore-layout"]');
+if (restoreBtn) restoreBtn.onclick = layout.restoreDefault;
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
@@ -138,16 +170,13 @@ document.addEventListener('fullscreenchange', () => {
   }
 });
 
-document.getElementById('btnRestorePane')?.addEventListener('click', () => LayoutManager.restoreLastCollapsed());
-document.getElementById('btnResetLayout')?.addEventListener('click', () => LayoutManager.resetLayout());
-
 function verifyPaneButtons() {
   const top = document.getElementById('paneTop');
   const left = document.getElementById('paneLeft');
   const right = document.getElementById('paneRight');
   const bottom = document.getElementById('paneBottom');
   if (top) {
-    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestartOnboarding','btnGuide','roomTemplateSel'].forEach(id => {
+    ['btnImportRoom','btnLoadSample','btnExportPNG','btnExportJSON','btnExportPDF','btnResetLayout','btnRestoreLayout','btnRestartOnboarding','btnGuide','roomTemplateSel','tglPlaneNormals','tglBouncePoints'].forEach(id => {
       if (!top.querySelector('#' + id)) console.warn('[UI] Top pane missing', id);
     });
   }
@@ -928,5 +957,11 @@ window.addEventListener('ui:action', async e => {
       placement.markSelectedAsMLP();
       window.dispatchEvent(new CustomEvent('placement:changed'));
       break;
+    case 'tglPlaneNormals':
+    case 'tglBouncePoints':
+      console.info('[ui:action]', id, payload);
+      break;
   }
 });
+console.log('APP_READY');
+console.assert(renderer && scene && camera);

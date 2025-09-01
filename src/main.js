@@ -17,6 +17,7 @@ import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { mountTopToolbar } from './ui/TopToolbar';
 import { initReflectionsAgent } from './agents/reflections.agent';
+import { buildRoomFromPreset } from './core/room.factory';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { PlacementLayer } from './render/PlacementLayer.js';
@@ -335,6 +336,7 @@ scene.add(axes);
 mountObjectToolbar({ scene, camera, controls, renderer });
 mountTopToolbar({ scene, camera, controls });
 initReflectionsAgent();
+buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls });
 
 // Initialize new systems
 let lfHeatmap = null;

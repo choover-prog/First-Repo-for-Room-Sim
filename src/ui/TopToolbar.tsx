@@ -14,7 +14,6 @@ export function mountTopToolbar(ctx: { scene: any; camera: any; controls: any })
   });
   roomSel.addEventListener('change', ()=> buildRoomFromPreset(roomSel.value, ctx));
   toolbar.appendChild(roomSel);
-  buildRoomFromPreset(roomSel.value, ctx);
 
   // existing toggles
   toolbar.appendChild(makeToggle({ id:'tglPlaneNormals', label:'Show plane normals', onChange:(c)=>window.dispatchEvent(new CustomEvent('ui:action',{detail:{id:'tglPlaneNormals',payload:c}})) }));

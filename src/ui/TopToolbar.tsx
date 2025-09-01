@@ -1,7 +1,8 @@
 import { makeToggle } from './toggles';
 import { getOverlays, setCeilingOpacity, toggleCeilingVisibilityQuick } from '../state/overlays.slice';
+import { buildRoomFromPreset } from '../core/room.factory';
 
-export function mountTopToolbar(){
+export function mountTopToolbar(ctx: { scene: any; camera: any; controls: any }){
   const toolbar = document.getElementById('top-toolbar');
   if(!toolbar) return;
 
@@ -11,7 +12,9 @@ export function mountTopToolbar(){
   ['baseline_6x8x2.6','small_4.2x5.5x2.4','l_room','low_ceiling_5x5x2.25'].forEach(id=>{
     const opt = document.createElement('option'); opt.value = id; opt.textContent = id; roomSel.appendChild(opt);
   });
+  roomSel.addEventListener('change', ()=> buildRoomFromPreset(roomSel.value, ctx));
   toolbar.appendChild(roomSel);
+  buildRoomFromPreset(roomSel.value, ctx);
 
   // existing toggles
   toolbar.appendChild(makeToggle({ id:'tglPlaneNormals', label:'Show plane normals', onChange:(c)=>window.dispatchEvent(new CustomEvent('ui:action',{detail:{id:'tglPlaneNormals',payload:c}})) }));

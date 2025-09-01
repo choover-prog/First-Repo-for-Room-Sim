@@ -15,6 +15,8 @@ import { mountEquipmentPanel } from './panels/EquipmentPanel.js';
 import { mountSpinoramaImport } from './panels/SpinoramaImportPanel.js';
 import { mountOnboarding } from './ui/Onboarding.js';
 import { mountObjectToolbar } from './ui/toolbar-objects.js';
+import { mountTopToolbar } from './ui/TopToolbar';
+import { initReflectionsAgent } from './agents/reflections.agent';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { PlacementLayer } from './render/PlacementLayer.js';
@@ -305,6 +307,7 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 camera.position.set(4, 2, 6);
+camera.up.set(0,0,1);
 
 // Expose for placement layer interactions
 window._placementRenderer = renderer;
@@ -312,6 +315,7 @@ window._placementCamera = camera;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.update();
 
 // Lights
 scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.9));
@@ -329,6 +333,8 @@ const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
 mountObjectToolbar({ scene, camera, controls, renderer });
+mountTopToolbar({ scene, camera, controls });
+initReflectionsAgent();
 
 // Initialize new systems
 let lfHeatmap = null;

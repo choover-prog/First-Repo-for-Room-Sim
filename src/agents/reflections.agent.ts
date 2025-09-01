@@ -7,7 +7,7 @@ export function initReflectionsAgent(ctx: { bus: any; recomputeReflections: (id:
     clearTimeout(timer);
     timer = setTimeout(() => {
       ctx.reflectionsCache?.clear?.();
-      ctx.recomputeReflections(payload.presetId);
+      ctx.recomputeReflections(payload?.presetId || 'scan_import');
     }, 150);
   });
 }

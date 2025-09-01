@@ -1,92 +1,101 @@
 import * as THREE from 'three';
+import { LAYERS, setLayerDeep } from './scene.layers';
 
-// Central artifact registry so we can teardown/attach deterministically
 export type RoomArtifacts = {
+  appRoot: THREE.Group;
   roomGroup: THREE.Group | null;
-  debugGroup: THREE.Group;
-  entitiesGroup: THREE.Group | null;
   scanGroup: THREE.Group | null;
+  entitiesGroup: THREE.Group | null;
+  debugGroup: THREE.Group;
 };
 
 export const artifacts: RoomArtifacts = {
+  appRoot: new THREE.Group(),
   roomGroup: null,
-  debugGroup: new THREE.Group(),
-  entitiesGroup: null,
   scanGroup: null,
+  entitiesGroup: null,
+  debugGroup: new THREE.Group(),
 };
 
-// Ensure the DebugHelpers group is attached once so helpers are easy to purge
-export function ensureDebugGroupAttached(scene: THREE.Scene) {
+export function ensureAppRoot(scene: THREE.Scene) {
+  if (!artifacts.appRoot.parent) {
+    artifacts.appRoot.name = 'AppRoot';
+    scene.add(artifacts.appRoot);
+  }
   if (!artifacts.debugGroup.parent) {
     artifacts.debugGroup.name = 'DebugHelpers';
-    scene.add(artifacts.debugGroup);
+    artifacts.appRoot.add(artifacts.debugGroup);
   }
+  setLayerDeep(artifacts.appRoot, LAYERS.APP);
 }
 
-// Remove stray meshes such as placeholder slabs and bbox helpers
-function purgeStrays(scene: THREE.Scene) {
-  const killNames = /^(FitBox|bboxHelper|MediumRoom|SampleRoom|Placeholder|DebugRoom|Cube|Box)$/i;
-  // Clear any helpers we added under DebugHelpers
-  artifacts.debugGroup.clear();
+export function deepDispose(root: THREE.Object3D) {
+  root.traverse((n: any) => {
+    n.geometry?.dispose?.();
+    n.material?.dispose?.();
+  });
+}
 
+export function purgeLegacyStrays(scene: THREE.Scene) {
+  const killName = /^(FitBox|bboxHelper|MediumRoom|Sample(Room)?|Placeholder|Debug(Room)?|Sim\s?Cube|Cube|Box)$/i;
   const toRemove: THREE.Object3D[] = [];
-  scene.children.forEach((o) => {
-    const isMesh = (o as any).isMesh === true;
-    const isBoxGeo = isMesh && (o as any).geometry?.type === 'BoxGeometry';
-    const namedStray = killNames.test(o.name || '');
-    if ((isBoxGeo || namedStray) && !['RoomGroup', 'EntitiesGroup', 'ScanGroup'].includes(o.name)) {
+  scene.traverse((o: any) => {
+    if (artifacts.appRoot.contains(o)) return;
+    const isMesh = o.isMesh === true;
+    const isBox = isMesh && (o.geometry?.type === 'BoxGeometry' || o.geometry?.type === 'BoxBufferGeometry');
+    const strayName = killName.test(o.name || '');
+    const notTagged = o.userData?.af_tag !== 'APP';
+    if ((isBox || strayName) && notTagged) {
       toRemove.push(o);
     }
   });
   toRemove.forEach((o) => {
-    o.traverse((n: any) => {
-      n.geometry?.dispose?.();
-      n.material?.dispose?.();
-    });
-    scene.remove(o);
+    o.parent?.remove(o);
+    deepDispose(o);
   });
   if (toRemove.length) {
-    console.warn(`[room.session] Purged ${toRemove.length} stray mesh(es)`);
+    console.warn(`[room.session] Purged ${toRemove.length} stray object(s):`, toRemove.map((o) => o.name || o.type));
   }
 }
 
-export function detachPreviousRoom(scene: THREE.Scene) {
-  if (artifacts.roomGroup) {
-    artifacts.roomGroup.traverse((n: any) => {
-      n.geometry?.dispose?.();
-      n.material?.dispose?.();
-    });
-    scene.remove(artifacts.roomGroup);
-    artifacts.roomGroup = null;
-  }
-  if (artifacts.scanGroup) {
-    artifacts.scanGroup.traverse((n: any) => {
-      n.geometry?.dispose?.();
-      n.material?.dispose?.();
-    });
-    scene.remove(artifacts.scanGroup);
-    artifacts.scanGroup = null;
-  }
-  purgeStrays(scene);
+export function resetAppRoot(scene: THREE.Scene) {
+  const keep = artifacts.appRoot;
+  const kids = [...keep.children];
+  kids.forEach((c) => {
+    keep.remove(c);
+    deepDispose(c);
+  });
+  artifacts.debugGroup = new THREE.Group();
+  artifacts.debugGroup.name = 'DebugHelpers';
+  artifacts.appRoot.add(artifacts.debugGroup);
+  artifacts.roomGroup = null;
+  artifacts.scanGroup = null;
+  artifacts.entitiesGroup = null;
 }
 
 export function attachRoom(scene: THREE.Scene, roomGroup: THREE.Group) {
-  detachPreviousRoom(scene);
-  roomGroup.name = 'RoomGroup';
-  scene.add(roomGroup);
+  ensureAppRoot(scene);
+  resetAppRoot(scene);
   artifacts.roomGroup = roomGroup;
-  ensureDebugGroupAttached(scene);
+  roomGroup.name = 'RoomGroup';
+  roomGroup.userData.af_tag = 'APP';
+  artifacts.appRoot.add(roomGroup);
+  setLayerDeep(roomGroup, LAYERS.APP);
+  purgeLegacyStrays(scene);
 }
 
 export function attachScan(scene: THREE.Scene, scanRoot: THREE.Object3D) {
+  ensureAppRoot(scene);
   if (!artifacts.scanGroup) {
     artifacts.scanGroup = new THREE.Group();
     artifacts.scanGroup.name = 'ScanGroup';
-    scene.add(artifacts.scanGroup);
+    artifacts.appRoot.add(artifacts.scanGroup);
   } else {
     artifacts.scanGroup.clear();
   }
+  scanRoot.userData.af_tag = 'APP';
   artifacts.scanGroup.add(scanRoot);
+  setLayerDeep(artifacts.scanGroup, LAYERS.APP);
 }
 
 export function addDebugHelper(obj: THREE.Object3D) {

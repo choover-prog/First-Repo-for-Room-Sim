@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { LAYERS } from './scene.layers';
 import { fitCameraToBox } from './camera.fit';
 import { toast } from './toast';
 import { assert } from './assert';
@@ -30,14 +29,17 @@ export async function buildRoomFromPreset(
   const group = new THREE.Group();
   group.name = 'RoomGroup';
   group.matrixAutoUpdate = false;
-  group.layers.set(LAYERS.DEFAULT);
 
   const mat = new THREE.MeshStandardMaterial({ color: 0xdddddd, side: THREE.DoubleSide });
+  const tag = (o: THREE.Object3D, t: string) => {
+    o.userData.surfaceType = t;
+    o.userData.af_tag = 'APP';
+  };
 
   // floor sits on XY plane with Z-up, no rotation needed
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(width, depth), mat.clone());
   floor.receiveShadow = true; floor.castShadow = false;
-  floor.userData.surfaceType = 'floor';
+  tag(floor, 'floor');
   group.add(floor);
 
   // ceiling mirrors the floor at +height, flip normal downward
@@ -45,7 +47,7 @@ export async function buildRoomFromPreset(
   ceiling.position.z = height;
   ceiling.rotation.x = Math.PI; // face toward interior
   ceiling.receiveShadow = true; ceiling.castShadow = false;
-  ceiling.userData.surfaceType = 'ceiling';
+  tag(ceiling, 'ceiling');
   group.add(ceiling);
 
   // north/south walls (width × height planes, rotated around X)
@@ -53,14 +55,14 @@ export async function buildRoomFromPreset(
   wallNorth.position.set(0, depth / 2, height / 2);
   wallNorth.rotation.x = Math.PI / 2;
   wallNorth.receiveShadow = true; wallNorth.castShadow = false;
-  wallNorth.userData.surfaceType = 'wall_north';
+  tag(wallNorth, 'wall_north');
   group.add(wallNorth);
 
   const wallSouth = new THREE.Mesh(new THREE.PlaneGeometry(width, height), mat.clone());
   wallSouth.position.set(0, -depth / 2, height / 2);
   wallSouth.rotation.x = -Math.PI / 2;
   wallSouth.receiveShadow = true; wallSouth.castShadow = false;
-  wallSouth.userData.surfaceType = 'wall_south';
+  tag(wallSouth, 'wall_south');
   group.add(wallSouth);
 
   // east/west walls (depth × height planes, rotated around Y)
@@ -68,14 +70,14 @@ export async function buildRoomFromPreset(
   wallEast.position.set(width / 2, 0, height / 2);
   wallEast.rotation.y = -Math.PI / 2;
   wallEast.receiveShadow = true; wallEast.castShadow = false;
-  wallEast.userData.surfaceType = 'wall_east';
+  tag(wallEast, 'wall_east');
   group.add(wallEast);
 
   const wallWest = new THREE.Mesh(new THREE.PlaneGeometry(height, depth), mat.clone());
   wallWest.position.set(-width / 2, 0, height / 2);
   wallWest.rotation.y = Math.PI / 2;
   wallWest.receiveShadow = true; wallWest.castShadow = false;
-  wallWest.userData.surfaceType = 'wall_west';
+  tag(wallWest, 'wall_west');
   group.add(wallWest);
 
   attachRoom(ctx.scene, group);

@@ -1,140 +1,82 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const $ = (s)=>document.querySelector(s);
+import { isCollapsed, setCollapsed, isFullscreen, setFullscreen } from '../state/ui.js';
 
-  // Require existing viewer region; if missing, warn & bail (DO NOT rebuild viewer).
-  const view = $('#view');
-  if (!view) { console.warn('[layout] #view not found; skipping layout enhancement.'); return; }
+export function mountLayout({ root }){
+  const app = document.createElement('div');
+  app.id = 'layout';
+  app.style.cssText = 'position:fixed;inset:0;display:grid;grid-template-columns:240px 1fr 280px;';
 
-  // Ensure #app root exists or make a lightweight wrapper without reparenting existing canvas.
-  let app = $('#app');
-  if (!app) {
-    app = document.createElement('div');
-    app.id = 'app';
-    // Wrap current body children safely:
-    // Insert at body start and move only NON-viewer siblings into it carefully
-    document.body.prepend(app);
-    // Move everything except #view into #app, but never move canvas or change #view parent.
-    [...document.body.children].forEach(el=>{
-      if (el === app || el === view) return;
-      app.appendChild(el);
-    });
-    app.appendChild(view); // if not already inside app, append (this preserves canvas if already a child)
+  const style = document.createElement('style');
+  style.textContent = `
+    #layout .zone{display:flex;flex-direction:column;}
+    #layout .zone-header{background:#1a1f29;padding:4px 8px;font-size:12px;display:flex;justify-content:space-between;align-items:center;}
+    #layout .zone-body{flex:1;overflow:auto;}
+    #layout .viewer{position:relative;flex:1;}
+    #layout .dock{height:160px;}
+    #layout.fullscreen{grid-template-columns:0 1fr 0;}
+  `;
+  document.head.append(style);
+
+  const left = makeZone('Navigation');
+  const viewerWrap = document.createElement('div');
+  viewerWrap.className = 'viewer';
+  const dock = makeZone('Controls');
+  dock.zone.classList.add('dock');
+  const right = makeZone('Equipment');
+
+  const center = document.createElement('div');
+  center.style.cssText = 'display:flex;flex-direction:column;';
+  center.append(viewerWrap, dock.zone);
+
+  app.append(left.zone, center, right.zone);
+  root.append(app);
+
+  // restore collapse states
+  applyCollapse(left.zone, 'left');
+  applyCollapse(right.zone, 'right');
+  applyCollapse(dock.zone, 'bottom');
+  if (isFullscreen()) {
+    app.classList.add('fullscreen');
   }
 
-  // Header
-  let header = $('#appHeader');
-  if (!header) {
-    header = document.createElement('header');
-    header.id = 'appHeader';
-    header.innerHTML = `
-      <div class="hdr__title">Navigation</div>
-      <button id="btnFullscreen" title="Fullscreen" aria-label="Fullscreen"></button>
-    `;
-    app.prepend(header);
-  }
+  // header buttons
+  left.btn.onclick = () => toggleCollapse(left.zone, 'left');
+  right.btn.onclick = () => toggleCollapse(right.zone, 'right');
+  dock.btn.onclick = () => toggleCollapse(dock.zone, 'bottom');
 
-  // Left panel
-  let left = $('#panelLeft');
-  if (!left) {
-    left = document.createElement('aside');
-    left.id = 'panelLeft';
-    left.innerHTML = `
-      <div class="panel__hdr">
-        <div class="panel__title">Controls</div>
-        <button class="panel__toggle" data-target="panelLeft" aria-label="Collapse/Expand"></button>
-      </div>
-      <div class="panel__body" id="panelLeftBody"></div>
-    `;
-    // Insert before #view to satisfy grid flow
-    app.insertBefore(left, view);
-  }
-
-  // Right panel
-  let right = $('#panelRight');
-  if (!right) {
-    right = document.createElement('aside');
-    right.id = 'panelRight';
-    right.innerHTML = `
-      <div class="panel__hdr">
-        <div class="panel__title">Equipment</div>
-        <button class="panel__toggle" data-target="panelRight" aria-label="Collapse/Expand"></button>
-      </div>
-      <div class="panel__body" id="panelRightBody"></div>
-    `;
-    // Insert after #view
-    if (view.nextSibling) view.parentNode.insertBefore(right, view.nextSibling);
-    else view.parentNode.appendChild(right);
-  }
-
-  // Move existing #ui (if any) into bottom bar when available
-  const oldUI = $('#ui');
-  const bottomBody = $('#panelBottomBody');
-  if (oldUI && bottomBody && !bottomBody.contains(oldUI)) {
-    bottomBody.appendChild(oldUI);
-  }
-
-  // State
-  const KEY_L='ui.leftCollapsed', KEY_R='ui.rightCollapsed';
-  const KEY_LW='ui.leftWidth', KEY_RW='ui.rightWidth';
-  const state = {
-    leftCollapsed: localStorage.getItem(KEY_L) === 'true',
-    rightCollapsed: localStorage.getItem(KEY_R) === 'true',
+  const fullBtn = document.createElement('button');
+  fullBtn.textContent = 'Fullscreen';
+  fullBtn.onclick = () => {
+    const f = !isFullscreen();
+    setFullscreen(f);
+    app.classList.toggle('fullscreen', f);
   };
-  const storedLW = parseInt(localStorage.getItem(KEY_LW),10);
-  const storedRW = parseInt(localStorage.getItem(KEY_RW),10);
-  if (!isNaN(storedLW)) app.style.setProperty('--left-width', storedLW + 'px');
-  if (!isNaN(storedRW)) app.style.setProperty('--right-width', storedRW + 'px');
-  const apply = ()=>{
-    left.classList.toggle('is-collapsed', state.leftCollapsed);
-    right.classList.toggle('is-collapsed', state.rightCollapsed);
-  };
-  const save = ()=> {
-    localStorage.setItem(KEY_L, String(state.leftCollapsed));
-    localStorage.setItem(KEY_R, String(state.rightCollapsed));
-  };
-  apply();
+  viewerWrap.append(fullBtn);
 
-  // Toggle handlers (no other wiring)
-  app.addEventListener('click', (e)=>{
-    const btn = e.target.closest('.panel__toggle');
-    if (btn) {
-      const id = btn.getAttribute('data-target');
-      if (id === 'panelLeft')  { state.leftCollapsed = !state.leftCollapsed;  }
-      if (id === 'panelRight') { state.rightCollapsed = !state.rightCollapsed; }
-      apply(); save();
-    }
-  });
+  return { root: app, regions: { left: left.body, viewer: viewerWrap, dock: dock.body, right: right.body } };
+}
 
-  // Resizable panels
-  function makeResizable(panel, side) {
-    const res = panel.querySelector('.panel__resizer') || document.createElement('div');
-    res.className = 'panel__resizer';
-    if (!res.parentElement) panel.appendChild(res);
-    let startX, startWidth;
-    const storageKey = side === 'left' ? KEY_LW : KEY_RW;
-    const onMove = (e)=>{
-      const dx = e.clientX - startX;
-      let w = side === 'left' ? startWidth + dx : startWidth - dx;
-      w = Math.max(150, w);
-      app.style.setProperty(side === 'left' ? '--left-width' : '--right-width', w + 'px');
-    };
-    const onUp = ()=>{
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      const val = parseInt(getComputedStyle(app).getPropertyValue(side === 'left' ? '--left-width' : '--right-width'),10);
-      if (!isNaN(val)) localStorage.setItem(storageKey, String(val));
-    };
-    res.addEventListener('mousedown', (e)=>{
-      e.preventDefault();
-      startX = e.clientX;
-      startWidth = panel.getBoundingClientRect().width;
-      window.addEventListener('mousemove', onMove);
-      window.addEventListener('mouseup', onUp);
-    });
+function makeZone(title){
+  const zone = document.createElement('div');
+  zone.className = 'zone';
+  const header = document.createElement('div');
+  header.className = 'zone-header';
+  header.textContent = title;
+  const btn = document.createElement('button');
+  btn.textContent = 'Collapse';
+  header.append(btn);
+  const body = document.createElement('div');
+  body.className = 'zone-body';
+  zone.append(header, body);
+  return { zone, header, body, btn };
+}
+
+function applyCollapse(el, zone){
+  if (isCollapsed(zone)) {
+    el.style.display = 'none';
   }
-  makeResizable(left, 'left');
-  makeResizable(right, 'right');
-
-  // DO NOT resize or replace canvas here; viewer code already handles it.
-  console.info('[layout] enhancement applied (non-destructive).');
-});
+}
+function toggleCollapse(el, zone){
+  const collapsed = el.style.display === 'none';
+  el.style.display = collapsed ? '' : 'none';
+  setCollapsed(zone, !collapsed);
+}

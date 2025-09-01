@@ -1,12 +1,3 @@
-(function guardCustomElementsDefineOnce() {
-  if (window.__ce_guard_installed) return;
-  window.__ce_guard_installed = true;
-  const _define = customElements.define.bind(customElements);
-  customElements.define = (name, ctor, opts) => {
-    if (customElements.get(name)) return;
-    _define(name, ctor, opts);
-  };
-})();
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -18,7 +9,7 @@ import { mountObjectToolbar } from './ui/toolbar-objects.js';
 import { mountTopToolbar } from './ui/TopToolbar';
 import { initReflectionsAgent } from './agents/reflections.agent';
 import { buildRoomFromPreset } from './core/room.factory';
-import { toast } from './core/toast';
+import { bootstrapApp } from './app/bootstrap';
 import { personasList, getPersona, setPersona, isTooltipsEnabled, setTooltipsEnabled } from './lib/persona.js';
 import { LFHeatmapLayer } from './render/LFHeatmapLayer.js';
 import { PlacementLayer } from './render/PlacementLayer.js';
@@ -309,7 +300,6 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 camera.position.set(4, 2, 6);
-camera.up.set(0,0,1);
 
 // Expose for placement layer interactions
 window._placementRenderer = renderer;
@@ -318,6 +308,8 @@ window._placementCamera = camera;
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.update();
+
+bootstrapApp({ scene, camera, controls });
 
 // Lights
 scene.add(new THREE.HemisphereLight(0xffffff, 0x223344, 0.9));
@@ -334,18 +326,9 @@ scene.add(grid);
 const axes = new THREE.AxesHelper(2);
 scene.add(axes);
 
-function removeStrayDebugMeshes(scene){
-  const stray = scene.children.filter(o =>
-    o.geometry?.type === 'BoxGeometry' && (!o.name || /debug|placeholder|cube/i.test(o.name))
-  );
-  stray.forEach(o => scene.remove(o));
-  if(stray.length) toast.warn(`Removed ${stray.length} stray debug mesh(es)`);
-}
-
 mountObjectToolbar({ scene, camera, controls, renderer });
 mountTopToolbar({ scene, camera, controls });
 initReflectionsAgent();
-removeStrayDebugMeshes(scene);
 buildRoomFromPreset('baseline_6x8x2.6', { scene, camera, controls });
 
 // Initialize new systems
